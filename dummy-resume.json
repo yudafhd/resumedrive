@@ -1,0 +1,45 @@
+{
+  "name": "Rina Kusuma",
+  "title": "Senior Frontend Engineer",
+  "contact": {
+    "email": "rina.kusuma@example.com",
+    "phone": "+62-812-3456-7890",
+    "website": "https://rinakusuma.dev",
+    "location": "Jakarta, Indonesia"
+  },
+  "summary": "Engineer dengan 7+ tahun pengalaman membangun aplikasi web skala besar menggunakan React, TypeScript, dan ekosistem Google Cloud.",
+  "experience": [
+    {
+      "company": "PT Digital Nusantara",
+      "role": "Lead Frontend Engineer",
+      "startDate": "2021-04",
+      "endDate": null,
+      "description": "Memimpin tim 6 engineer, merancang arsitektur micro-frontend, dan mengintegrasikan TanStack Query untuk data fetching real-time.",
+      "isCurrent": true
+    },
+    {
+      "company": "TechWorks Asia",
+      "role": "Frontend Developer",
+      "startDate": "2018-01",
+      "endDate": "2021-03",
+      "description": "Mengembangkan dashboard internal dengan Next.js & Tailwind, meningkatkan performa halaman hingga 40%.",
+      "isCurrent": false
+    }
+  ],
+  "education": [
+    {
+      "school": "Institut Teknologi Bandung",
+      "degree": "S.T. Informatika",
+      "startYear": "2013",
+      "endYear": "2017"
+    }
+  ],
+  "skills": [
+    "TypeScript",
+    "React",
+    "Next.js",
+    "TanStack Query",
+    "Google Cloud",
+    "SheetJS"
+  ]
+}
