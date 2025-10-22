@@ -1,45 +1,89 @@
 {
-  "name": "Rina Kusuma",
-  "title": "Senior Frontend Engineer",
-  "contact": {
-    "email": "rina.kusuma@example.com",
-    "phone": "+62-812-3456-7890",
-    "website": "https://rinakusuma.dev",
-    "location": "Jakarta, Indonesia"
-  },
-  "summary": "Engineer dengan 7+ tahun pengalaman membangun aplikasi web skala besar menggunakan React, TypeScript, dan ekosistem Google Cloud.",
-  "experience": [
-    {
-      "company": "PT Digital Nusantara",
-      "role": "Lead Frontend Engineer",
-      "startDate": "2021-04",
-      "endDate": null,
-      "description": "Memimpin tim 6 engineer, merancang arsitektur micro-frontend, dan mengintegrasikan TanStack Query untuk data fetching real-time.",
-      "isCurrent": true
-    },
-    {
-      "company": "TechWorks Asia",
-      "role": "Frontend Developer",
-      "startDate": "2018-01",
-      "endDate": "2021-03",
-      "description": "Mengembangkan dashboard internal dengan Next.js & Tailwind, meningkatkan performa halaman hingga 40%.",
-      "isCurrent": false
-    }
-  ],
-  "education": [
-    {
-      "school": "Institut Teknologi Bandung",
-      "degree": "S.T. Informatika",
-      "startYear": "2013",
-      "endYear": "2017"
-    }
-  ],
-  "skills": [
-    "TypeScript",
-    "React",
-    "Next.js",
-    "TanStack Query",
-    "Google Cloud",
-    "SheetJS"
-  ]
+"name": "Yuda Fahrudin",
+"title": "Software Engineer (Fullstack)",
+"contact": {
+"email": "[ahmadyudafahrudin@gmail.com](mailto:ahmadyudafahrudin@gmail.com)",
+"phone": "+62-857-0888-0099",
+"website": "[https://volaroid.com](https://volaroid.com)",
+"location": "Jakarta, Indonesia"
+},
+"summary": "Software Engineer dengan pengalaman di healthcare, insurance, dan e-commerce. Terampil membangun frontend skala besar dan fitur full-stack menggunakan React, Next.js, dan Node.js; berfokus pada design system, optimasi performa, dan clean code. Berpengalaman kolaborasi lintas fungsi, code review, serta pengiriman UI/UX produksi.",
+"experience": [
+{
+"company": "PT Pertamina Bina Medika",
+"role": "Software Engineer Fullstack",
+"startDate": "2024-02",
+"endDate": null,
+"description": "Mengembangkan EMR untuk SIMRS (Initial Inpatient Assessment, CPPT), back-office Bali International Hospital, modul verifikasi SatuSehat, Design System berbasis Ant Design, dan optimasi performa dengan Next.js; aktif melakukan code review dan R&D UI/UX.",
+"isCurrent": true
+},
+{
+"company": "REY.id",
+"role": "Associate Software Engineer",
+"startDate": "2023-01",
+"endDate": "2023-12",
+"description": "Inisiasi Business Dashboard, kontribusi design system & komponen UI, optimasi halaman pembayaran dan responsivitas, pengembangan frontend ReactJS, code review, serta unit testing menggunakan JEST.",
+"isCurrent": false
+},
+{
+"company": "SIRCLO",
+"role": "Associate Software Engineer",
+"startDate": "2021-08",
+"endDate": "2023-01",
+"description": "Bangun logika & UI alamat pengiriman, optimasi performa shipping, perbaikan alur PrivyID, pembuatan komponen UI reusable, code review & unit test JEST, serta pengembangan API Gateway dengan Apollo GraphQL.",
+"isCurrent": false
+},
+{
+"company": "WAVE Consulting",
+"role": "Frontend Developer",
+"startDate": "2019-07",
+"endDate": "2021-08",
+"description": "Membangun produk akuntansi menggunakan Angular 11 dan mengembangkan fitur mobile dengan React Native.",
+"isCurrent": false
+},
+{
+"company": "TWISCODE",
+"role": "Full Stack Developer",
+"startDate": "2018-11",
+"endDate": "2019-07",
+"description": "Pengembangan proyek menggunakan ReactJS dan Node.js.",
+"isCurrent": false
+},
+{
+"company": "HUBBLE.build",
+"role": "React Native Developer",
+"startDate": "2017-11",
+"endDate": "2018-10",
+"description": "Perbaikan bug aplikasi mobile React Native serta dukungan & pemeliharaan beberapa API berbasis Ruby on Rails.",
+"isCurrent": false
+}
+],
+"education": [
+{
+"school": "Politeknik Elektronika Negeri Surabaya (PENS)",
+"degree": "Bachelor's degree, Information Technology",
+"startYear": "2016",
+"endYear": "2020"
+}
+],
+"skills": [
+"React",
+"React Native",
+"Next.js",
+"Node.js",
+"Supabase",
+"JavaScript",
+"PHP (Filament)",
+"Git",
+"GitLab",
+"Jira",
+"Figma",
+"VS Code",
+"Ant Design",
+"Apollo GraphQL",
+"Jest",
+"Design System",
+"Performance Optimization",
+"Clean Code"
+]
 }

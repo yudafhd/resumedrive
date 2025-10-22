@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 declare namespace google {
   namespace accounts {
@@ -45,4 +46,4 @@ declare global {
   const gapi: GapiClient;
 }
 
-export {};
+export { };

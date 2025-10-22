@@ -6,7 +6,6 @@ import { ALLOWED_MIME_TYPES } from "@/lib/mime";
 
 type PickerButtonProps = {
   accessToken: string;
-  apiKey?: string;
   showFolders?: boolean;
   mimeTypes?: string[];
   onPicked: (doc: {
@@ -20,7 +19,6 @@ type PickerButtonProps = {
 
 export function PickerButton({
   accessToken,
-  apiKey,
   showFolders = true,
   mimeTypes = ALLOWED_MIME_TYPES,
   onPicked,
@@ -29,7 +27,8 @@ export function PickerButton({
   const [isOpening, setIsOpening] = useState(false);
 
   const handleOpen = async () => {
-    if (!apiKey) {
+    const developerKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+    if (!developerKey) {
       onError?.("Missing NEXT_PUBLIC_GOOGLE_API_KEY");
       return;
     }
@@ -38,7 +37,7 @@ export function PickerButton({
     try {
       await openDrivePicker({
         accessToken,
-        developerKey: apiKey,
+        developerKey,
         showFolders,
         mimeTypes,
         onPicked,

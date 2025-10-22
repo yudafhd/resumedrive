@@ -1,11 +1,8 @@
-import { z } from "zod";
 import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
 import { downloadFileServer } from "@/lib/drive-server";
 
-const querySchema = z.object({
-  fileId: z.string().min(1),
-});
+/** Manual query validation (replaces former Zod schema) */
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -14,19 +11,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing Bearer token" }, { status: 401 });
   }
 
-  const params = Object.fromEntries(request.nextUrl.searchParams);
-  const parsed = querySchema.safeParse(params);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid request", details: parsed.error.flatten() },
-      { status: 400 },
-    );
+  const fileId = request.nextUrl.searchParams.get("fileId");
+  if (typeof fileId !== "string" || fileId.trim().length === 0) {
+    return NextResponse.json({ error: "fileId must be a non-empty string" }, { status: 400 });
   }
 
   try {
     const { data, metadata } = await downloadFileServer({
       accessToken,
-      fileId: parsed.data.fileId,
+      fileId,
     });
     const base64 = Buffer.from(data).toString("base64");
     return NextResponse.json({

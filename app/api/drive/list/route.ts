@@ -1,22 +1,8 @@
-import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 import { listFilesServer } from "@/lib/drive-server";
 import { ALLOWED_MIME_TYPES } from "@/lib/mime";
 
-const querySchema = z.object({
-  folderId: z.string().optional(),
-  pageSize: z
-    .string()
-    .transform((value) => Number.parseInt(value, 10))
-    .refine((value) => Number.isNaN(value) === false, {
-      message: "pageSize must be a number",
-    })
-    .optional(),
-  mimeTypes: z
-    .string()
-    .transform((value) => value.split(",").filter(Boolean))
-    .optional(),
-});
+// Manual validation replaces former Zod schema
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -25,25 +11,37 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing Bearer token" }, { status: 401 });
   }
 
-  const params = Object.fromEntries(request.nextUrl.searchParams);
-  const parsed = querySchema.safeParse(params);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid request", details: parsed.error.flatten() },
-      { status: 400 },
-    );
+  const sp = request.nextUrl.searchParams;
+
+  const folderId = sp.get("folderId") || undefined;
+
+  let pageSize: number | undefined;
+  const pageSizeRaw = sp.get("pageSize");
+  if (pageSizeRaw != null) {
+    const n = Number.parseInt(pageSizeRaw, 10);
+    if (!Number.isFinite(n) || Number.isNaN(n) || n < 1 || n > 100) {
+      return NextResponse.json(
+        { error: "pageSize must be a number between 1 and 100" },
+        { status: 400 },
+      );
+    }
+    pageSize = n;
   }
 
-  const mimeTypes = parsed.data.mimeTypes?.filter((value) =>
-    ALLOWED_MIME_TYPES.includes(value),
-  );
+  const mimeTypesParam = sp.get("mimeTypes");
+  const allMimeTypes = mimeTypesParam
+    ? mimeTypesParam.split(",").map((s) => s.trim()).filter(Boolean)
+    : undefined;
+
+  const filtered = allMimeTypes?.filter((m) => ALLOWED_MIME_TYPES.includes(m));
+  const mimeTypes = filtered && filtered.length ? filtered : undefined;
 
   try {
     const files = await listFilesServer({
       accessToken,
-      folderId: parsed.data.folderId,
-      pageSize: parsed.data.pageSize,
-      mimeTypes: mimeTypes && mimeTypes.length ? mimeTypes : undefined,
+      folderId,
+      pageSize,
+      mimeTypes,
     });
     return NextResponse.json({ files });
   } catch (error) {

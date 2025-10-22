@@ -19,7 +19,7 @@ export function EditorTab({
 }: EditorTabProps) {
   return (
     <>
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
         <button
           type="button"
           onClick={onLoadSample}
@@ -70,9 +70,11 @@ type ConfigTabProps = {
   onSaveJson: () => void;
   isSaving: boolean;
   onDownloadJson: () => void;
-  onImportXlsx: (event: ChangeEvent<HTMLInputElement>) => void;
   onImportJson: (event: ChangeEvent<HTMLInputElement>) => void;
   folderId: string | null;
+  onLoadFromDrive: () => void;
+  isLoadingFromDrive: boolean;
+  canLoadFromDrive: boolean;
 };
 
 export function ConfigTab({
@@ -81,14 +83,16 @@ export function ConfigTab({
   onSaveJson,
   isSaving,
   onDownloadJson,
-  onImportXlsx,
+  canLoadFromDrive,
+  onLoadFromDrive,
+  isLoadingFromDrive,
   onImportJson,
   folderId,
 }: ConfigTabProps) {
   return (
     <>
       <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4">
           <div className="flex flex-col">
             <label className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
               File name
@@ -100,7 +104,7 @@ export function ConfigTab({
               className="w-64 rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1"
             />
           </div>
-          <div className="flex flex-wrap items-end justify-end gap-2">
+          <div className="flex flex-wrap items-end gap-2">
             <button
               type="button"
               onClick={onSaveJson}
@@ -111,13 +115,21 @@ export function ConfigTab({
             </button>
             <button
               type="button"
+              onClick={onLoadFromDrive}
+              disabled={!canLoadFromDrive || isLoadingFromDrive}
+              className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+            >
+              {isLoadingFromDrive ? "Loading…" : "Load from Drive"}
+            </button>
+            <button
+              type="button"
               onClick={onDownloadJson}
               className="rounded-md border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
             >
-              Download Format
+              Save to local
             </button>
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100">
-              Import JSON
+              Load from local
               <input
                 type="file"
                 accept=".json,application/json"
@@ -129,7 +141,7 @@ export function ConfigTab({
         </div>
       </section>
       <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <ConfigPanel folderId={folderId} showEditorLink={false} />
+        <ConfigPanel folderId={folderId} />
       </section>
     </>
   );

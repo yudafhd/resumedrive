@@ -5,9 +5,6 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
-  '@tanstack/react-query':
-    specifier: ^5.90.5
-    version: 5.90.5(react@19.1.0)
   '@tiptap/extension-link':
     specifier: ^3.7.2
     version: 3.7.2(@tiptap/core@3.7.2)(@tiptap/pm@3.7.2)
@@ -44,9 +41,6 @@ dependencies:
   xlsx:
     specifier: ^0.18.5
     version: 0.18.5
-  zod:
-    specifier: ^4.1.12
-    version: 4.1.12
 
 devDependencies:
   '@eslint/eslintrc':
@@ -765,19 +759,6 @@ packages:
       postcss: 8.5.6
       tailwindcss: 4.1.15
     dev: true
-
-  /@tanstack/query-core@5.90.5:
-    resolution: {integrity: sha512-wLamYp7FaDq6ZnNehypKI5fNvxHPfTYylE0m/ZpuuzJfJqhR5Pxg9gvGBHZx4n7J+V5Rg5mZxHHTlv25Zt5u+w==}
-    dev: false
-
-  /@tanstack/react-query@5.90.5(react@19.1.0):
-    resolution: {integrity: sha512-pN+8UWpxZkEJ/Rnnj2v2Sxpx1WFlaa9L6a4UO89p6tTQbeo+m0MS8oYDjbggrR8QcTyjKoYWKS3xJQGr3ExT8Q==}
-    peerDependencies:
-      react: ^18 || ^19
-    dependencies:
-      '@tanstack/query-core': 5.90.5
-      react: 19.1.0
-    dev: false
 
   /@tiptap/core@3.7.2(@tiptap/pm@3.7.2):
     resolution: {integrity: sha512-fJwNpTx0aq4UU0HNkxPvPYfNBcTHQ/q5xBUdOB5Mgu6clwGES38jVsNNSudB8g53APUmJIS+2fJbkxl3V+0jww==}
@@ -4226,7 +4207,3 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
     dev: true
-
-  /zod@4.1.12:
-    resolution: {integrity: sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ==}
-    dev: false

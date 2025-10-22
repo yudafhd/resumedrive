@@ -2,55 +2,42 @@
 
 import { useRef, useState } from "react";
 import { Toast, ToastMessage } from "@/components/Toast";
-import { QuickStartChecklist } from "@/components/QuickStartChecklist";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 import { PickerButton } from "@/components/PickerButton";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useResource } from "@/lib/async";
+import { cache } from "@/lib/cache";
 import {
   DriveFile,
   listFiles,
-  uploadFile,
 } from "@/lib/drive-client";
 import {
-  getStoredFileId,
   getStoredFolderId,
-  saveDraft,
-  setStoredFileId,
-  setStoredFolderId,
 } from "@/lib/storage";
 
 type ConfigPanelProps = {
   folderId?: string | null;
-  showEditorLink?: boolean;
 };
 
-export function ConfigPanel({
-  showEditorLink = true,
-}: ConfigPanelProps) {
+export function ConfigPanel({ }: ConfigPanelProps) {
   const toastIdRef = useRef(0);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [folderId, setFolderId] = useState<string | null>(() => getStoredFolderId());
-  const [preferredFileId, setPreferredFileId] = useState<string | null>(() => getStoredFileId());
   const { accessToken, isAuthenticated } = useAuth();
-  const queryClient = useQueryClient();
-  const clientId =
-    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "Not configured";
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY ?? "Not configured";
 
-  const filesQuery = useQuery({
-    queryKey: ["drive-files", accessToken, folderId],
-    queryFn: async () => {
-      if (!accessToken) {
-        return [];
-      }
+  const enabled = Boolean(accessToken);
+  const listKey = ["drive:list", { folderId, pageSize: 20, mimeTypes: undefined }];
+  const { refetch: refetchFiles } = useResource<DriveFile[]>(
+    listKey,
+    async () => {
+      if (!enabled) return [];
       return listFiles({
-        accessToken,
+        accessToken: accessToken!,
         folderId: folderId ?? undefined,
       });
     },
-    enabled: Boolean(accessToken),
-  });
+    { staleTime: 30_000 }
+  );
 
   const handlePickerResult = (doc: {
     id: string;
@@ -61,9 +48,8 @@ export function ConfigPanel({
     if (doc.isFolder) {
       setFolderId(doc.id);
       showToast(`Folder "${doc.name}" selected.`);
-      queryClient.invalidateQueries({ queryKey: ["drive-files"] });
+      cache.invalidatePrefix("drive:list");
     } else {
-      setPreferredFileId(doc.id);
       showToast(`Ready to edit "${doc.name}".`, "success");
       // router.push(`/cv/editor?fileId=${doc.id}`);
     }
@@ -87,7 +73,7 @@ export function ConfigPanel({
         <div className="flex flex-wrap items-center gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <GoogleSignInButton
             onSignedIn={() => {
-              filesQuery.refetch();
+              refetchFiles();
               showToast("Signed in successfully.", "success");
             }}
             onError={(message) => showToast(message, "error")}
@@ -95,36 +81,14 @@ export function ConfigPanel({
           {isAuthenticated && (
             <PickerButton
               accessToken={accessToken ?? ""}
-              apiKey={apiKey}
               onPicked={handlePickerResult}
               onError={(message) => showToast(message, "error")}
             />
-          )}
-          {!apiKey && (
-            <span className="text-xs font-semibold uppercase tracking-wide text-red-500">
-              Add NEXT_PUBLIC_GOOGLE_API_KEY in .env.local
-            </span>
           )}
         </div>
       </header>
 
       <dl className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            NEXT_PUBLIC_GOOGLE_CLIENT_ID
-          </dt>
-          <dd className="mt-1 break-words text-sm font-medium text-slate-800">
-            {clientId}
-          </dd>
-        </div>
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            NEXT_PUBLIC_GOOGLE_API_KEY
-          </dt>
-          <dd className="mt-1 break-words text-sm font-medium text-slate-800">
-            {apiKey}
-          </dd>
-        </div>
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 md:col-span-2">
           <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Target folder
@@ -134,8 +98,6 @@ export function ConfigPanel({
           </dd>
         </div>
       </dl>
-
-      <QuickStartChecklist showEditorLink={showEditorLink} />
 
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2">
