@@ -1,7 +1,14 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+    ChangeEvent,
+    Suspense,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Toast, ToastMessage } from "@/components/Toast";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -35,7 +42,7 @@ import sampleResumeJson from "@/dummy-resume.json";
 type ToastType = ToastMessage["variant"];
 type TabId = "editor" | "preview" | "config";
 
-export default function ResumeEditorPage() {
+function ResumeEditorPageContent() {
     const searchParams = useSearchParams();
     const queryClient = useQueryClient();
     const { accessToken, isAuthenticated } = useAuth();
@@ -431,6 +438,20 @@ export default function ResumeEditorPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function ResumeEditorPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="flex min-h-screen items-center justify-center bg-white text-slate-600">
+                    Loading…
+                </div>
+            }
+        >
+            <ResumeEditorPageContent />
+        </Suspense>
     );
 }
 

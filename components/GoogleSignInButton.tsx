@@ -1,12 +1,11 @@
 "use client";
 
-type TokenClient = google.accounts.oauth2.TokenClient;
-
 import { useCallback, useRef, useState } from "react";
 import { useAuth } from "./providers/AuthProvider";
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 const SCOPES = ["https://www.googleapis.com/auth/drive.file"];
+type TokenClient = google.accounts.oauth2.TokenClient;
 
 type GoogleSignInButtonProps = {
   className?: string;
@@ -34,16 +33,17 @@ export function GoogleSignInButton({
       throw new Error("Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID");
     }
 
-    const google = window.google;
-    if (!google?.accounts?.oauth2) {
+    const googleIdentity = window.google?.accounts?.oauth2;
+    if (!googleIdentity) {
       throw new Error("Google Identity Services failed to load");
     }
 
-    tokenClientRef.current = google.accounts.oauth2.initTokenClient({
+    tokenClientRef.current = googleIdentity.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES.join(" "),
       callback: () => undefined,
     });
+
     return tokenClientRef.current;
   }, []);
 
@@ -52,13 +52,15 @@ export function GoogleSignInButton({
       onError?.("Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID");
       return;
     }
+
     try {
       setIsLoading(true);
       const client = ensureTokenClient();
 
       client.callback = (response) => {
         setIsLoading(false);
-        if ("error" in response) {
+
+        if (response.error) {
           onError?.(`Google sign-in failed: ${response.error}`);
           return;
         }

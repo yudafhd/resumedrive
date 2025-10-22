@@ -1,7 +1,14 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ChangeEvent,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FormEditor } from "@/components/FormEditor";
 import { Toast, ToastMessage } from "@/components/Toast";
@@ -33,7 +40,7 @@ import sampleResumeJson from "@/dummy-resume.json";
 type ToastType = ToastMessage["variant"];
 type TabId = "editor" | "preview" | "config";
 
-export default function ResumeEditorPage() {
+function ResumeEditorPageContent() {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { accessToken, isAuthenticated } = useAuth();
@@ -465,6 +472,20 @@ export default function ResumeEditorPage() {
   );
 }
 
+export default function ResumeEditorPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-white text-slate-600">
+          Loading editor…
+        </div>
+      }
+    >
+      <ResumeEditorPageContent />
+    </Suspense>
+  );
+}
+
 function ensureExtension(name: string, extension: ".json" | ".xlsx") {
   const trimmed = name.trim();
   if (trimmed.toLowerCase().endsWith(extension)) {
@@ -507,4 +528,3 @@ function TabButton({ id, label, activeTab, onSelect }: TabButtonProps) {
     </button>
   );
 }
-

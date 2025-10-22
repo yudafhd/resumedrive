@@ -39,7 +39,7 @@ export async function uploadFileServer({
   }
 
   const drive = createDriveClient(accessToken);
-  const media: drive_v3.Schema$Media = {
+  const media: drive_v3.Params$Resource$Files$Create["media"] = {
     mimeType,
     body: Readable.from(data),
   };

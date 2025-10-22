@@ -15,6 +15,16 @@ type PickerOptions = {
   onPicked: (doc: PickerDocument) => void;
 };
 
+type GapiClient = {
+  load: (
+    api: string,
+    options?: { callback?: () => void; onerror?: () => void }
+  ) => void;
+  client?: {
+    init: (opts: { apiKey: string }) => Promise<unknown>;
+  };
+};
+
 let pickerInitPromise: Promise<void> | null = null;
 
 export async function openDrivePicker(options: PickerOptions) {
@@ -26,7 +36,7 @@ export async function openDrivePicker(options: PickerOptions) {
 
   return new Promise<void>((resolve) => {
     const { google } = window as typeof window & {
-      google?: typeof google;
+      google?: typeof globalThis.google;
     };
     if (!google?.picker) {
       throw new Error("Google Picker failed to load");
@@ -70,7 +80,17 @@ export async function openDrivePicker(options: PickerOptions) {
 async function ensurePickerLoaded(apiKey: string) {
   if (!pickerInitPromise) {
     pickerInitPromise = new Promise<void>((resolve, reject) => {
-      const { gapi } = window as typeof window & { gapi?: GapiClient };
+      const { gapi } = window as typeof window & {
+        gapi?: {
+          load: (
+            api: string,
+            options?: { callback?: () => void; onerror?: () => void }
+          ) => void;
+          client?: {
+            init: (opts: { apiKey: string }) => Promise<unknown>;
+          };
+        };
+      };
       if (!gapi) {
         reject(new Error("gapi script failed to load"));
         return;

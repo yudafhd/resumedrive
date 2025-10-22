@@ -1,3 +1,29 @@
+
+declare namespace google {
+  namespace accounts {
+    namespace oauth2 {
+      type TokenResponse = {
+        access_token?: string;
+        expires_in?: string | number;
+        error?: string;
+      };
+
+      type TokenClientConfig = {
+        client_id: string;
+        scope: string;
+        callback: (response: TokenResponse) => void;
+      };
+
+      interface TokenClient {
+        callback: ((response: TokenResponse) => void) | null;
+        requestAccessToken(options?: { prompt?: string }): void;
+      }
+
+      function initTokenClient(config: TokenClientConfig): TokenClient;
+    }
+  }
+}
+
 type GapiLoadOptions = {
   callback: () => void;
   onerror?: () => void;
