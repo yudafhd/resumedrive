@@ -13,8 +13,6 @@ export async function GET(request: NextRequest) {
 
   const sp = request.nextUrl.searchParams;
 
-  const folderId = sp.get("folderId") || undefined;
-
   let pageSize: number | undefined;
   const pageSizeRaw = sp.get("pageSize");
   if (pageSizeRaw != null) {
@@ -39,7 +37,6 @@ export async function GET(request: NextRequest) {
   try {
     const files = await listFilesServer({
       accessToken,
-      folderId,
       pageSize,
       mimeTypes,
     });

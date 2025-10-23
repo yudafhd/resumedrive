@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { AppDataProvider } from "@/components/providers/AppDataProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "RESUME DRIVE",
   description:
-    "Build and manage your CV with Google Drive storage powered by Google Identity Services.",
+    "Build and manage your Resum / CV with Google Drive storage powered by Google Identity Services.",
 };
 
 export default function RootLayout({
@@ -41,7 +42,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          {children}
+          <AppDataProvider>
+            {children}
+          </AppDataProvider>
         </AuthProvider>
       </body>
     </html>

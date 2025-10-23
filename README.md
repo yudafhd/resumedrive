@@ -1,14 +1,14 @@
 # ResumeDrive
 
-ResumeDrive is a Next.js (App Router) starter that helps you build a Google-integrated CV editor. Users sign in with Google Identity Services, open Google Picker to choose folders or existing resumes, then read and sync CV data as JSON/XLSX to their own Drive. The app only requests the `drive.file` scope so it can create/update files that belong to the app or files explicitly picked by the user.
+ResumeDrive is a Next.js (App Router) starter that helps you build a Google-integrated CV editor. Users sign in with Google Identity Services, open Google Picker to choose folders or existing resumes, then read and sync CV data as JSON to their own Drive. The app only requests the `drive.file` scope so it can create/update files that belong to the app or files explicitly picked by the user.
 
 ## Features
 
 - Google Identity Services popup sign-in; access token stored client-side only.
-- Google Picker for selecting target folders or existing JSON/XLSX files.
+- Google Picker for selecting target folders or existing JSON files.
 - Client helpers for Google Drive REST (list, download, create/update) with exponential backoff.
 - Optional proxy API routes backed by the official `googleapis` SDK.
-- CV editor built with Tailwind + TanStack Query that converts JSON ↔ XLSX using SheetJS.
+- CV editor built with Tailwind + TanStack Query.
 - Friendly tooling for drafts, rapid folder/file recall, and Drive-aware metadata (`appProperties`).
 
 ## Prerequisites
@@ -28,10 +28,9 @@ Copy `.env.local.example` to `.env.local` and fill in your credentials:
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_web_client_id.apps.googleusercontent.com
 NEXT_PUBLIC_GOOGLE_API_KEY=your_browser_api_key
 DRIVE_ALLOWED_MIME_JSON=application/json
-DRIVE_ALLOWED_MIME_XLSX=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
 ```
 
-> ⚠️ Keep the OAuth scope limited to `https://www.googleapis.com/auth/drive.file`. Only add `drive.appdata` if you plan to use `appDataFolder` uploads.
+> ⚠️ The app requests the `https://www.googleapis.com/auth/drive.file` and `https://www.googleapis.com/auth/drive.appdata` scopes. The latter stores user settings in the private `appDataFolder`; remove it only if you drop that feature.
 
 ## Development
 
@@ -55,11 +54,11 @@ pnpm lint     # run eslint
 
 ## How it works
 
-- **Auth & state** – `GoogleSignInButton` initializes GIS popup mode and stores the short-lived access token in memory/localStorage via `AuthProvider`.
-- **Picker** – `PickerButton` loads `gapi` and opens Google Picker with MIME filters (JSON/XLSX) so users choose folders or files.
-- **Drive REST** – `lib/drive-client.ts` performs `multipart` uploads, downloads, and listings directly against Drive using the Bearer token.
-- **Drive proxy** – `/api/drive/*` routes forward operations with server-side validation using the `googleapis` SDK (handy when you must hide additional logic).
-- **CV editor** – `/cv/editor` uses TanStack Query for Drive fetches, SheetJS for XLSX conversions, and Zod validation to keep resume data consistent.
+- **Auth & state** – `GoogleSignInButton` initializes GIS popup mode and stores the short-lived access token in memory/localStorage via `AuthProvider`. The token includes `drive.file` and `drive.appdata` scopes.
+- **App data** – `lib/drive-server.ts` and `lib/drive-appdata.ts` handle resumes and preferences in Drive's private `appDataFolder`, so content stays invisible in My Drive. `AppDataProvider` exposes upload/list/delete helpers across the UI via the `/api/drive/*` routes.
+- **Optional picker** – `PickerButton` remains available if you want to expose Google Picker for regular Drive files, but the default flow no longer depends on it.
+- **Drive proxy** – `/api/drive/*` routes cover list/upload/download/delete operations with server-side validation using the `googleapis` SDK (handy when you must hide additional logic).
+- **CV editor** – `/cv/editor` uses TanStack Query for Drive fetches and lightweight validation helpers to keep resume data consistent.
 
 ## Deployment
 

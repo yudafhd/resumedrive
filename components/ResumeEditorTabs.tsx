@@ -9,25 +9,14 @@ import { type CvData as ResumeData } from "@/lib/cv";
 type EditorTabProps = {
   resume: ResumeData;
   onChange: (value: ResumeData) => void;
-  onLoadSample: () => void;
 };
 
 export function EditorTab({
   resume,
   onChange,
-  onLoadSample,
 }: EditorTabProps) {
   return (
     <>
-      <div className="flex flex-wrap justify-end gap-2">
-        <button
-          type="button"
-          onClick={onLoadSample}
-          className="rounded-md border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-600 transition hover:bg-blue-100"
-        >
-          Load sample resume
-        </button>
-      </div>
       <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <FormEditor value={resume} onChange={onChange} />
       </section>
@@ -71,7 +60,6 @@ type ConfigTabProps = {
   isSaving: boolean;
   onDownloadJson: () => void;
   onImportJson: (event: ChangeEvent<HTMLInputElement>) => void;
-  folderId: string | null;
   onLoadFromDrive: () => void;
   isLoadingFromDrive: boolean;
   canLoadFromDrive: boolean;
@@ -87,7 +75,6 @@ export function ConfigTab({
   onLoadFromDrive,
   isLoadingFromDrive,
   onImportJson,
-  folderId,
 }: ConfigTabProps) {
   return (
     <>
@@ -141,7 +128,7 @@ export function ConfigTab({
         </div>
       </section>
       <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <ConfigPanel folderId={folderId} />
+        <ConfigPanel />
       </section>
     </>
   );

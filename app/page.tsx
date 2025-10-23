@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import {
     ChangeEvent,
     Suspense,
+    useCallback,
     useEffect,
     useRef,
     useState,
@@ -17,34 +18,32 @@ import {
     EditorTab,
     PreviewTab,
 } from "@/components/ResumeEditorTabs";
-import {
-    getFileMetadata,
-    readJsonFile,
-    readXlsxFile,
-    uploadFile,
-} from "@/lib/drive-client";
+import type { DriveFile } from "@/lib/drive-server";
 import {
     type CvData as ResumeData,
     defaultCv as defaultResume,
 } from "@/lib/cv";
-import { MIME_JSON, MIME_XLSX } from "@/lib/mime";
-import { xlsxToJson } from "@/lib/xlsx";
+import { MIME_JSON } from "@/lib/mime";
 import {
     clearDraft,
-    getStoredFileId,
-    getStoredFolderId,
     readDraft,
     saveDraft,
-    setStoredFileId,
 } from "@/lib/storage";
-import sampleResumeJson from "@/dummy-resume.json";
+import HeaderBar from "@/components/HeaderBar";
+import LeftPanel from "@/components/LeftPanel";
+import RightSettingsDrawer from "@/components/RightSettingsDrawer";
+import { fetchAppSettings, saveAppSettings } from "@/lib/settings-client";
+import { createSettingsPayload } from "@/lib/app-settings";
+import type { AppSettings } from "@/lib/app-settings";
+import { useAppData } from "@/components/providers/AppDataProvider";
 
 type ToastType = ToastMessage["variant"];
 type TabId = "editor" | "preview" | "config";
 
 function ResumeEditorPageContent() {
     const searchParams = useSearchParams();
-    const { accessToken } = useAuth();
+    const { accessToken, isAuthenticated } = useAuth();
+    const { upload: uploadAppData } = useAppData();
 
     const initialFileId = searchParams.get("fileId");
     const requestedMime = searchParams.get("mimeType") ?? undefined;
@@ -62,39 +61,67 @@ function ResumeEditorPageContent() {
     const [isSaving, setIsSaving] = useState(false);
     const [isLoadingFromDrive, setIsLoadingFromDrive] = useState(false);
     const toastIdRef = useRef(0);
-    const [folderId, setFolderId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<TabId>("editor");
-    const sampleResume = sampleResumeJson as ResumeData;
     const previewRef = useRef<HTMLDivElement | null>(null);
-    const [storedFileId, setStoredFileIdState] = useState<string | null>(null);
 
+    // UI drawers/toggles
+    const [leftPanelOpen, setLeftPanelOpen] = useState(false);
+
+    const settingsResourceKey = `settings:appData:${accessToken ?? "anonymous"}`;
+    const { data: settingsData } = useResource<AppSettings | null>(
+        settingsResourceKey,
+        async (signal) => {
+            if (!accessToken) return null;
+            return fetchAppSettings(accessToken, signal);
+        },
+        { staleTime: 0 },
+    );
+    const [settings, setSettings] = useState<AppSettings | null>(null);
 
     useEffect(() => {
-        setFolderId(getStoredFolderId());
-    }, []);
+        if (settingsData !== undefined) {
+            setSettings(settingsData);
+        }
+    }, [settingsData]);
 
     useEffect(() => {
-        const savedId = getStoredFileId();
-        if (savedId) {
-            setStoredFileIdState(savedId);
-            if (!initialFileId) {
-                setCurrentFileId(savedId);
+        if (!settings) return;
+        if (!initialFileId) {
+            const targetFileId = settings.recentResumeId ?? null;
+            if (targetFileId !== currentFileId) {
+                setCurrentFileId(targetFileId);
             }
         }
-    }, [initialFileId]);
+    }, [settings, currentFileId, initialFileId]);
 
     const showToast = (message: string, variant: ToastType = "info") => {
         toastIdRef.current += 1;
         setToast({ id: toastIdRef.current, message, variant });
     };
 
-
-    const handleLoadSample = () => {
-        setResume(sampleResume);
-        setCurrentMime(MIME_JSON);
-        setFileName("Sample Resume.json");
-        showToast("Sample resume loaded.", "success");
-    };
+    const persistSettings = useCallback(
+        async (updates: Partial<AppSettings>) => {
+            if (!accessToken) {
+                throw new Error("Cannot update settings without Google access token");
+            }
+            const previous = settings;
+            const merged: Partial<AppSettings> = { ...(previous ?? {}), ...updates };
+            const optimistic = createSettingsPayload(merged);
+            setSettings(optimistic);
+            cache.set(settingsResourceKey, optimistic);
+            try {
+                const saved = await saveAppSettings(accessToken, merged);
+                setSettings(saved);
+                cache.set(settingsResourceKey, saved);
+                return saved;
+            } catch (error) {
+                setSettings(previous ?? null);
+                cache.set(settingsResourceKey, previous ?? null);
+                throw error;
+            }
+        },
+        [accessToken, settings, settingsResourceKey],
+    );
 
     const handleDownloadPdf = () => {
         if (!previewRef.current) {
@@ -103,12 +130,6 @@ function ResumeEditorPageContent() {
         }
 
         if (typeof window === "undefined") return;
-
-        const printWindow = window.open("", "_blank", "noopener,noreferrer");
-        if (!printWindow) {
-            showToast("Popup blocked. Allow popups to download the PDF.", "error");
-            return;
-        }
 
         const styles = `
       <style>
@@ -121,44 +142,83 @@ function ResumeEditorPageContent() {
       </style>
     `;
 
-        printWindow.document.open();
-        printWindow.document.write(
-            `<html><head><title>${fileName.replace(/\.[^.]+$/, "")}</title>${styles}</head><body>${previewRef.current.outerHTML}</body></html>`,
+        // Create hidden iframe to avoid popup blockers
+        const iframe = document.createElement("iframe");
+        iframe.style.position = "fixed";
+        iframe.style.top = "0";
+        iframe.style.left = "0";
+        iframe.style.width = "0";
+        iframe.style.height = "0";
+        iframe.style.border = "0";
+        iframe.style.visibility = "hidden";
+        iframe.setAttribute("sandbox", "allow-modals allow-same-origin allow-scripts");
+        document.body.appendChild(iframe);
+
+        const w = iframe.contentWindow;
+        if (!w || !w.document) {
+            showToast("Unable to prepare print preview", "error");
+            try {
+                document.body.removeChild(iframe);
+            } catch { }
+            return;
+        }
+
+        const doc = w.document;
+        doc.open();
+        doc.write(
+            `<html><head><title>${fileName.replace(/\.[^.]+$/, "")}</title>${styles}</head><body>${previewRef.current.outerHTML}</body></html>`
         );
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
+        doc.close();
+
+        const triggerPrint = () => {
+            setTimeout(() => {
+                try {
+                    w.focus();
+                    w.print();
+                } catch { }
+            }, 150);
+        };
+
+        if (doc.readyState === "complete") {
+            triggerPrint();
+        } else {
+            w.addEventListener("load", triggerPrint, { once: true } as AddEventListenerOptions);
+        }
+
+        w.addEventListener(
+            "afterprint",
+            () => {
+                try {
+                    document.body.removeChild(iframe);
+                } catch { }
+            },
+            { once: true } as AddEventListenerOptions
+        );
     };
 
     const fileKey = ["file:current", accessToken ?? "", currentFileId ?? ""];
     const fileQuery = useResource(
         fileKey,
-        async () => {
+        async (signal) => {
             if (!accessToken || !currentFileId) return undefined;
-            const metadata = await getFileMetadata(accessToken, currentFileId);
-            const mimeType = metadata.mimeType ?? MIME_JSON;
-
-            if (mimeType === MIME_JSON) {
-                const json = await readJsonFile(accessToken, currentFileId);
-                return {
-                    metadata,
-                    mimeType,
-                    data: json,
-                };
+            const params = new URLSearchParams({ fileId: currentFileId });
+            const response = await fetch(`/api/drive/download?${params.toString()}`, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                signal,
+            });
+            if (!response.ok) {
+                const body = await response.json().catch(() => ({}));
+                throw new Error(body?.message ?? "Failed to download file from Drive");
             }
-
-            if (mimeType === MIME_XLSX) {
-                const blob = await readXlsxFile(accessToken, currentFileId);
-                const json = await xlsxToJson(blob);
-                return {
-                    metadata,
-                    mimeType,
-                    data: json,
-                };
-            }
-
-            throw new Error(`Unsupported file type: ${mimeType}`);
+            const payload = (await response.json()) as { metadata: DriveFile; data: string };
+            const text = decodeBase64ToString(payload.data);
+            return {
+                metadata: payload.metadata,
+                mimeType: payload.metadata.mimeType ?? MIME_JSON,
+                data: JSON.parse(text) as ResumeData,
+            };
         },
         { staleTime: 0 }
     );
@@ -168,9 +228,6 @@ function ResumeEditorPageContent() {
             setResume(fileQuery.data.data);
             setFileName(fileQuery.data.metadata?.name ?? deriveFileName(fileQuery.data.mimeType));
             setCurrentMime(fileQuery.data.mimeType);
-            const resolvedId = currentFileId ?? null;
-            setStoredFileId(resolvedId);
-            setStoredFileIdState(resolvedId);
         }
     }, [fileQuery.data, currentFileId]);
 
@@ -207,21 +264,28 @@ function ResumeEditorPageContent() {
         setIsSaving(true);
         try {
             const name = ensureExtension(fileName, ".json");
-            const result = await uploadFile({
-                accessToken,
+            const result = await uploadAppData({
                 name,
                 mimeType: MIME_JSON,
                 data: JSON.stringify(resume, null, 2),
-                parents: folderId ? [folderId] : undefined,
                 fileId: currentMime === MIME_JSON ? currentFileId ?? undefined : undefined,
             });
-            setCurrentFileId(result.id);
+            setCurrentFileId(result.id ?? null);
             setCurrentMime(MIME_JSON);
-            setFileName(result.name);
-            setStoredFileId(result.id);
-            setStoredFileIdState(result.id);
+            setFileName(result.name ?? "");
+            try {
+                await persistSettings({
+                    recentResumeId: result.id ?? null,
+                });
+            } catch (settingsError) {
+                showToast(
+                    settingsError instanceof Error
+                        ? `Saved resume but failed to sync settings: ${settingsError.message}`
+                        : "Saved resume but failed to sync settings.",
+                    "error",
+                );
+            }
             cache.invalidate(["file:current", accessToken ?? "", currentFileId ?? ""]);
-            cache.invalidatePrefix("drive:list");
             showToast(`Saved ${result.name} to Drive.`, "success");
             clearDraft();
         } catch (error) {
@@ -246,8 +310,18 @@ function ResumeEditorPageContent() {
             setCurrentMime(MIME_JSON);
             setFileName(ensureExtension(file.name, ".json"));
             setCurrentFileId(null);
-            setStoredFileId(null);
-            setStoredFileIdState(null);
+            if (accessToken) {
+                try {
+                    await persistSettings({ recentResumeId: null });
+                } catch (settingsError) {
+                    showToast(
+                        settingsError instanceof Error
+                            ? `Imported resume but failed to sync settings: ${settingsError.message}`
+                            : "Imported resume but failed to sync settings.",
+                        "error",
+                    );
+                }
+            }
             showToast(`Imported ${file.name}`, "success");
         } catch (error) {
             if (error instanceof SyntaxError) {
@@ -269,7 +343,7 @@ function ResumeEditorPageContent() {
             return;
         }
 
-        const fallbackStored = storedFileId ?? getStoredFileId();
+        const fallbackStored = settings?.recentResumeId ?? null;
         const targetFileId = fallbackStored ?? currentFileId;
 
         if (!targetFileId) {
@@ -286,8 +360,6 @@ function ResumeEditorPageContent() {
             if (targetFileId !== currentFileId) {
                 setCurrentFileId(targetFileId);
             }
-            setStoredFileId(targetFileId);
-            setStoredFileIdState(targetFileId);
 
             await fileQuery.refetch();
             if (fileQuery.error) {
@@ -305,6 +377,42 @@ function ResumeEditorPageContent() {
         }
     };
 
+    const handleSelectDriveFile = async (fileId: string) => {
+        if (!accessToken) {
+            showToast("Sign in to load your resume from Drive.", "error");
+            return;
+        }
+        try {
+            if (fileId !== currentFileId) {
+                setCurrentFileId(fileId);
+            }
+            try {
+                await persistSettings({
+                    recentResumeId: fileId,
+                });
+            } catch (settingsError) {
+                showToast(
+                    settingsError instanceof Error
+                        ? `Loaded resume but failed to sync settings: ${settingsError.message}`
+                        : "Loaded resume but failed to sync settings.",
+                    "error",
+                );
+            }
+
+            await fileQuery.refetch();
+            if (fileQuery.error) {
+                throw fileQuery.error as Error;
+            }
+
+            showToast("Resume loaded from Drive.", "success");
+        } catch (error) {
+            showToast(
+                error instanceof Error ? error.message : "Failed to load from Drive.",
+                "error",
+            );
+        }
+    };
+
     const downloadJson = () => {
         const blob = new Blob([JSON.stringify(resume, null, 2)], {
             type: "application/json",
@@ -317,92 +425,81 @@ function ResumeEditorPageContent() {
         URL.revokeObjectURL(url);
     };
 
-
-
-    // if (isAuthenticated) {
-    //     return (
-    //         <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center gap-6 px-6 text-center">
-    //             <h1 className="text-3xl font-bold text-slate-900">
-    //                 Sign in to edit your resume
-    //             </h1>
-    //             <p className="text-sm text-slate-500">
-    //                 Head back to the dashboard, connect your Google account, and choose a
-    //                 file or folder. We only need the <code>drive.file</code> scope.
-    //             </p>
-    //         </main>
-    //     );
-    // }
+    const canLoadFromDrive = Boolean(accessToken && (settings?.recentResumeId ?? currentFileId));
 
     return (
-        <div className="min-h-screen bg-white">
-            <div className="mx-auto flex max-w-5xl flex-col gap-5 px-6 py-12">
-                <header className="space-y-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-slate-900">RESUME DRIVE</h1>
-                        <p className="mt-2 text-sm text-slate-500">
-                            Update your resume content and sync it to Google Drive as JSON or
-                            XLSX. Changes are saved locally until you upload.
-                        </p>
+        <div className="min-h-screen bg-[var(--surface-subtle)] text-[var(--text)]">
+            <HeaderBar
+                activeTab={activeTab === "preview" ? "preview" : "editor"}
+                onTabChange={(t) => setActiveTab(t)}
+                onToggleLeft={() => setLeftPanelOpen((v) => !v)}
+                onSave={handleSaveJson}
+                onImport={handleImportJson}
+                onDownloadJson={downloadJson}
+                onDownloadPdf={handleDownloadPdf}
+            />
+            <div className="px-4 md:px-6 py-6">
+                <main className="grid grid-cols-1 gap-2 md:grid-cols-10 md:gap-6">
+                    <div className="hidden md:block col-span-3">
+                        <LeftPanel
+                            onSave={handleSaveJson}
+                            onImport={handleImportJson}
+                            onDownloadJson={downloadJson}
+                            isAuthenticated={Boolean(isAuthenticated)}
+                            onSelectFile={handleSelectDriveFile}
+                            loading={isSaving}
+                        />
                     </div>
-                </header>
+                    {activeTab === "editor" ? <div className="col-span-7">
+                        <EditorTab
+                            resume={resume}
+                            onChange={setResume}
+                        />
+                    </div> : <div className="col-span-7">
+                        <PreviewTab
+                            resume={resume}
+                            onDownloadPdf={handleDownloadPdf}
+                            previewRef={previewRef}
+                        />
+                    </div>}
+                </main>
+            </div>
 
-                <nav className="flex flex-wrap gap-2">
-                    <TabButton
-                        id="editor"
-                        label="Form"
-                        activeTab={activeTab}
-                        onSelect={setActiveTab}
-                    />
-                    <TabButton
-                        id="preview"
-                        label="Preview"
-                        activeTab={activeTab}
-                        onSelect={setActiveTab}
-                    />
-                    <TabButton
-                        id="config"
-                        label="Save Resume"
-                        activeTab={activeTab}
-                        onSelect={setActiveTab}
-                    />
-                </nav>
-
-
-
-                {activeTab === "editor" && (
-                    <EditorTab
-                        resume={resume}
-                        onChange={setResume}
-                        onLoadSample={handleLoadSample}
-                    />
-                )}
-
-                {activeTab === "preview" && (
-                    <PreviewTab
-                        resume={resume}
-                        onDownloadPdf={handleDownloadPdf}
-                        previewRef={previewRef}
-                    />
-                )}
-
-                {activeTab === "config" && (
-                    <ConfigTab
-                        fileName={fileName}
-                        onFileNameChange={setFileName}
-                        isSaving={isSaving}
-                        canLoadFromDrive={Boolean(accessToken && (storedFileId ?? currentFileId))}
-                        isLoadingFromDrive={isLoadingFromDrive}
-                        onSaveJson={handleSaveJson}
-                        onLoadFromDrive={handleLoadFromDrive}
-                        onDownloadJson={downloadJson}
-                        onImportJson={handleImportJson}
-                        folderId={folderId}
-                    />
-                )}
+            {/* Mobile left panel drawer */}
+            <div className={`fixed inset-0 z-50 transition-opacity ${leftPanelOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
+                <div
+                    className="absolute inset-0 bg-black/30"
+                    aria-hidden="true"
+                    onClick={() => setLeftPanelOpen(false)}
+                />
+                <div className={`absolute inset-y-0 left-0 w-72 bg-[var(--surface)] border-r border-[var(--border)] shadow-xl transition-transform ${leftPanelOpen ? "translate-x-0" : "-translate-x-full"}`}>
+                    <div className="flex h-14 items-center justify-end border-b border-[var(--border)] px-3">
+                        <button
+                            type="button"
+                            aria-label="Close left panel"
+                            onClick={() => setLeftPanelOpen(false)}
+                            className="inline-flex items-center justify-center rounded-md p-2 text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div className="h-[calc(100vh-56px)] overflow-auto p-4">
+                        <LeftPanel
+                            onSave={handleSaveJson}
+                            onImport={handleImportJson}
+                            onDownloadJson={downloadJson}
+                            isAuthenticated={Boolean(isAuthenticated)}
+                            onSelectFile={handleSelectDriveFile}
+                            loading={isSaving}
+                        />
+                    </div>
+                </div>
             </div>
 
             {toast && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2">
+                <div className="fixed top-4 right-4 z-[60] space-y-2">
                     <Toast
                         {...toast}
                         onDismiss={() => setToast(null)}
@@ -427,7 +524,7 @@ export default function ResumeEditorPage() {
     );
 }
 
-function ensureExtension(name: string, extension: ".json" | ".xlsx") {
+function ensureExtension(name: string, extension: ".json" = ".json") {
     const trimmed = name.trim();
     if (trimmed.toLowerCase().endsWith(extension)) {
         return trimmed;
@@ -435,37 +532,21 @@ function ensureExtension(name: string, extension: ".json" | ".xlsx") {
     return replaceExtension(trimmed, extension);
 }
 
-function replaceExtension(name: string, extension: ".json" | ".xlsx") {
+function replaceExtension(name: string, extension: ".json" = ".json") {
     const base = name.replace(/\.(json|xlsx)$/i, "");
     return `${base}${extension}`;
 }
 
 function deriveFileName(mimeType: string) {
-    if (mimeType === MIME_XLSX) {
-        return "Resume.xlsx";
-    }
-    return "Resume.json";
+    return mimeType === MIME_JSON ? "Resume.json" : "Resume";
 }
 
-type TabButtonProps = {
-    id: TabId;
-    label: string;
-    activeTab: TabId;
-    onSelect: (tab: TabId) => void;
-};
-
-function TabButton({ id, label, activeTab, onSelect }: TabButtonProps) {
-    const isActive = id === activeTab;
-    return (
-        <button
-            type="button"
-            onClick={() => onSelect(id)}
-            className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${isActive
-                ? "border-blue-500 bg-blue-50 text-blue-600 shadow"
-                : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-600"
-                }`}
-        >
-            {label}
-        </button>
-    );
+function decodeBase64ToString(base64: string) {
+    if (typeof window === "undefined" || typeof window.atob !== "function") {
+        throw new Error("Base64 decoding requires a browser environment");
+    }
+    const binary = window.atob(base64);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    const decoder = new TextDecoder("utf-8");
+    return decoder.decode(bytes);
 }

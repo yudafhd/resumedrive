@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { ReactNode } from "react";
 
 type QuickStartChecklistProps = {
@@ -17,7 +16,6 @@ export function QuickStartChecklist({
   className,
   title = "Quick start checklist",
   description,
-  showEditorLink = true,
 }: QuickStartChecklistProps) {
   return (
     <aside className={`${baseClasses} ${className ?? ""}`.trim()}>
@@ -27,18 +25,10 @@ export function QuickStartChecklist({
         <li>1. Configure Google OAuth Client ID with Drive API enabled.</li>
         <li>2. Add API Key for Google Picker in `.env.local`.</li>
         <li>
-          3. Sign in, choose a folder, and create a JSON draft or import an XLSX resume.
+          3. Sign in, choose a folder, and create a JSON draft or import a JSON resume.
         </li>
-        <li>4. Use the editor to sync JSON and XLSX versions.</li>
+        <li>4. Use the editor to edit and save JSON.</li>
       </ul>
-      {showEditorLink && (
-        <Link
-          href="/cv/editor"
-          className="inline-flex items-center justify-center rounded-md border border-blue-300 bg-white px-3 py-2 font-semibold text-blue-600 transition hover:bg-blue-100"
-        >
-          Open editor
-        </Link>
-      )}
     </aside>
   );
 }

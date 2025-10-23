@@ -55,7 +55,11 @@ type AuthProviderProps = {
 };
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [state, setState] = useState<AuthState>(() => readStoredState());
+  const [state, setState] = useState<AuthState>({ accessToken: null, expiresAt: null });
+
+  useEffect(() => {
+    setState(readStoredState());
+  }, []);
 
   const setCredentials = useCallback((token: string, expiresIn: number) => {
     const expiresAt = Date.now() + expiresIn * 1000;

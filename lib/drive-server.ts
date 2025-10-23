@@ -1,3 +1,4 @@
+import 'server-only';
 import { Readable } from "node:stream";
 import { google, drive_v3 } from "googleapis";
 import { ALLOWED_MIME_TYPES } from "./mime";
@@ -5,7 +6,7 @@ import { ALLOWED_MIME_TYPES } from "./mime";
 const APP_PROPERTY_KEY = "app";
 const APP_PROPERTY_VALUE = "resumedrive";
 
-type DriveFile = drive_v3.Schema$File;
+export type DriveFile = drive_v3.Schema$File;
 
 export function createDriveClient(accessToken: string) {
   if (!accessToken) {
@@ -22,7 +23,6 @@ type UploadServerOptions = {
   name: string;
   mimeType: string;
   data: Buffer;
-  parents?: string[];
   fileId?: string;
 };
 
@@ -31,7 +31,6 @@ export async function uploadFileServer({
   name,
   mimeType,
   data,
-  parents,
   fileId,
 }: UploadServerOptions): Promise<DriveFile> {
   if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
@@ -52,10 +51,6 @@ export async function uploadFileServer({
     },
   };
 
-  if (parents?.length) {
-    resource.parents = parents;
-  }
-
   if (fileId) {
     const response = await drive.files.update({
       fileId,
@@ -68,7 +63,10 @@ export async function uploadFileServer({
 
   const response = await drive.files.create({
     media,
-    requestBody: resource,
+    requestBody: {
+      ...resource,
+      parents: ["appDataFolder"],
+    },
     fields: "id,name,mimeType,modifiedTime,iconLink",
   });
   return response.data;
@@ -106,14 +104,12 @@ export async function downloadFileServer({
 
 type ListServerOptions = {
   accessToken: string;
-  folderId?: string;
   pageSize?: number;
   mimeTypes?: string[];
 };
 
 export async function listFilesServer({
   accessToken,
-  folderId,
   pageSize = 20,
   mimeTypes = ALLOWED_MIME_TYPES,
 }: ListServerOptions): Promise<DriveFile[]> {
@@ -121,11 +117,8 @@ export async function listFilesServer({
 
   const conditions = [
     `appProperties has { key='${APP_PROPERTY_KEY}' and value='${APP_PROPERTY_VALUE}' }`,
+    "trashed=false",
   ];
-
-  if (folderId) {
-    conditions.push(`'${folderId}' in parents`);
-  }
 
   if (mimeTypes.length) {
     const mimeQueries = mimeTypes.map((type) => `mimeType='${type}'`);
@@ -137,8 +130,21 @@ export async function listFilesServer({
     fields: "files(id,name,mimeType,modifiedTime,iconLink)",
     pageSize,
     orderBy: "modifiedTime desc",
-    spaces: "drive",
+    spaces: "appDataFolder",
   });
 
   return response.data.files ?? [];
+}
+
+type DeleteServerOptions = {
+  accessToken: string;
+  fileId: string;
+};
+
+export async function deleteFileServer({
+  accessToken,
+  fileId,
+}: DeleteServerOptions): Promise<void> {
+  const drive = createDriveClient(accessToken);
+  await drive.files.delete({ fileId });
 }

@@ -3,63 +3,30 @@
 import { useRef, useState } from "react";
 import { Toast, ToastMessage } from "@/components/Toast";
 import { GoogleSignInButton } from "./GoogleSignInButton";
-import { PickerButton } from "@/components/PickerButton";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useResource } from "@/lib/async";
-import { cache } from "@/lib/cache";
-import {
-  DriveFile,
-  listFiles,
-} from "@/lib/drive-client";
-import {
-  getStoredFolderId,
-} from "@/lib/storage";
+import { useAppData } from "@/components/providers/AppDataProvider";
 
-type ConfigPanelProps = {
-  folderId?: string | null;
-};
-
-export function ConfigPanel({ }: ConfigPanelProps) {
+export function ConfigPanel() {
   const toastIdRef = useRef(0);
   const [toast, setToast] = useState<ToastMessage | null>(null);
-  const [folderId, setFolderId] = useState<string | null>(() => getStoredFolderId());
-  const { accessToken, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const { files, loading, refresh } = useAppData();
 
-  const enabled = Boolean(accessToken);
-  const listKey = ["drive:list", { folderId, pageSize: 20, mimeTypes: undefined }];
-  const { refetch: refetchFiles } = useResource<DriveFile[]>(
-    listKey,
-    async () => {
-      if (!enabled) return [];
-      return listFiles({
-        accessToken: accessToken!,
-        folderId: folderId ?? undefined,
-      });
-    },
-    { staleTime: 30_000 }
-  );
-
-  const handlePickerResult = (doc: {
-    id: string;
-    name: string;
-    mimeType: string;
-    isFolder: boolean;
-  }) => {
-    if (doc.isFolder) {
-      setFolderId(doc.id);
-      showToast(`Folder "${doc.name}" selected.`);
-      cache.invalidatePrefix("drive:list");
-    } else {
-      showToast(`Ready to edit "${doc.name}".`, "success");
-      // router.push(`/cv/editor?fileId=${doc.id}`);
-    }
-  };
-
-  const showToast = (message: string, variant: ToastMessage["variant"] = "info") => {
+  const showToast = (
+    message: string,
+    variant: ToastMessage["variant"] = "info",
+  ) => {
     toastIdRef.current += 1;
     setToast({ id: toastIdRef.current, message, variant });
   };
 
+  const handleSignedIn = async () => {
+    await refresh();
+    showToast("Signed in successfully.", "success");
+  };
+
+  const totalFiles = files.length;
+  const latestFile = files.at(0);
 
   return (
     <div className="space-y-6">
@@ -68,36 +35,59 @@ export function ConfigPanel({ }: ConfigPanelProps) {
           Save to Google Drive
         </h2>
         <p className="text-sm text-slate-500">
-          Double-check your Google credentials and Drive target before uploading.
+          Resumes sync to your Google Drive{" "}
+          <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">
+            appDataFolder
+          </code>
+          , keeping them private to this app.
         </p>
         <div className="flex flex-wrap items-center gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <GoogleSignInButton
-            onSignedIn={() => {
-              refetchFiles();
-              showToast("Signed in successfully.", "success");
-            }}
+            onSignedIn={handleSignedIn}
             onError={(message) => showToast(message, "error")}
           />
           {isAuthenticated && (
-            <PickerButton
-              accessToken={accessToken ?? ""}
-              onPicked={handlePickerResult}
-              onError={(message) => showToast(message, "error")}
-            />
+            <button
+              type="button"
+              onClick={() => {
+                void refresh();
+              }}
+              className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
+            >
+              Refresh files
+            </button>
           )}
         </div>
       </header>
 
-      <dl className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 md:col-span-2">
-          <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Target folder
-          </dt>
-          <dd className="mt-1 text-sm font-medium text-slate-800">
-            {folderId ?? "No folder selected (Drive root)"}
-          </dd>
-        </div>
-      </dl>
+      <section className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Stored resumes
+        </h3>
+        {isAuthenticated ? (
+          <div className="mt-2 space-y-1 text-sm text-slate-700">
+            {loading ? (
+              <p>Loading saved files…</p>
+            ) : totalFiles > 0 ? (
+              <>
+                <p>{totalFiles} file{totalFiles === 1 ? "" : "s"} saved.</p>
+                {latestFile && latestFile.modifiedTime && (
+                  <p className="text-xs text-slate-500">
+                    Latest update:{" "}
+                    {new Date(latestFile.modifiedTime).toLocaleString()}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p>No saved resumes yet.</p>
+            )}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-slate-600">
+            Connect with Google to create a private backup.
+          </p>
+        )}
+      </section>
 
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2">
@@ -110,4 +100,3 @@ export function ConfigPanel({ }: ConfigPanelProps) {
     </div>
   );
 }
-

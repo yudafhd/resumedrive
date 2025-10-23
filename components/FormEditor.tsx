@@ -76,7 +76,6 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
   return (
     <div className="space-y-8">
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-slate-900">Profile</h2>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">

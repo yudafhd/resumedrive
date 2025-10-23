@@ -1,8 +1,7 @@
 import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
 import { downloadFileServer } from "@/lib/drive-server";
-
-/** Manual query validation (replaces former Zod schema) */
+import { MIME_JSON } from "@/lib/mime";
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -21,6 +20,12 @@ export async function GET(request: NextRequest) {
       accessToken,
       fileId,
     });
+
+    // Enforce JSON-only downloads. If a non-JSON fileId is forced here, reject.
+    if ((metadata.mimeType ?? "") !== MIME_JSON) {
+      return NextResponse.json({ error: "XLSX is no longer supported" }, { status: 415 });
+    }
+
     const base64 = Buffer.from(data).toString("base64");
     return NextResponse.json({
       metadata,

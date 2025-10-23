@@ -4,7 +4,10 @@ import { useCallback, useRef, useState } from "react";
 import { useAuth } from "./providers/AuthProvider";
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-const SCOPES = ["https://www.googleapis.com/auth/drive.file"];
+const SCOPES = [
+  "https://www.googleapis.com/auth/drive.file",
+  "https://www.googleapis.com/auth/drive.appdata",
+];
 type TokenClient = google.accounts.oauth2.TokenClient;
 
 type GoogleSignInButtonProps = {

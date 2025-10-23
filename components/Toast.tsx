@@ -29,6 +29,7 @@ export function Toast({ message, variant = "info", onDismiss }: ToastProps) {
   return (
     <div
       className={`pointer-events-auto flex items-center justify-end gap-3 rounded-xl px-4 py-2 shadow-lg ${variantClasses[variant]}`}
+      aria-live="polite"
     >
       <span className="text-sm font-medium">{message}</span>
       <button

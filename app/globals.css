@@ -2,6 +2,11 @@
 
 :root {
   color-scheme: light;
+  --surface: #ffffff;
+  --surface-subtle: #f8fafc;
+  --border: #e2e8f0;
+  --accent: #2563eb;
+  --text: #0f172a;
 }
 
 @theme inline {

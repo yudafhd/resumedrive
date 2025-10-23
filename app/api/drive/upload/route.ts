@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
   // mimeType: string and allowed
   if (typeof body?.mimeType !== "string" || !isAllowedMime(body.mimeType)) {
-    return NextResponse.json({ error: "Unsupported MIME type" }, { status: 400 });
+    return NextResponse.json({ error: "Unsupported MIME type" }, { status: 415 });
   }
 
   // data: non-empty string
@@ -38,18 +38,6 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-  }
-
-  // parents: array of strings (optional)
-  let parents: string[] | undefined = undefined;
-  if (body.parents !== undefined) {
-    if (!Array.isArray(body.parents) || !body.parents.every((p: unknown) => typeof p === "string")) {
-      return NextResponse.json(
-        { error: "parents must be an array of strings" },
-        { status: 400 },
-      );
-    }
-    parents = body.parents as string[];
   }
 
   // fileId: if present must be a string
@@ -71,7 +59,6 @@ export async function POST(request: NextRequest) {
       name: body.name as string,
       mimeType: body.mimeType as string,
       data: buffer,
-      parents,
       fileId,
     });
     return NextResponse.json(file);

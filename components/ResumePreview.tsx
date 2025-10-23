@@ -12,15 +12,16 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
     return (
       <div ref={ref} className="space-y-6">
         <header className="border-b border-slate-200 pb-4">
-          <h2 className="text-2xl font-bold text-slate-900">
+          <h2 className="text-3xl font-bold text-slate-900">
             {resume.name || "Your Name"}
           </h2>
-          <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
+          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
             {resume.title || "Professional Title"}
           </p>
-          <div className="mt-3 flex flex-wrap gap-4 text-sm text-slate-500">
-            {resume.contact.email && <span>{resume.contact.email}</span>}
-            {resume.contact.phone && <span>{resume.contact.phone}</span>}
+          <div className="mt-3 flex flex-wrap gap-1 text-sm text-slate-500">
+            {resume.contact.location && <span>{resume.contact.location} |</span>}
+            {resume.contact.email && <span>{resume.contact.email} |</span>}
+            {resume.contact.phone && <span>{resume.contact.phone} |</span>}
             {resume.contact.website && (
               <a
                 href={resume.contact.website}
@@ -31,7 +32,7 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
                 {resume.contact.website}
               </a>
             )}
-            {resume.contact.location && <span>{resume.contact.location}</span>}
+
           </div>
         </header>
 
