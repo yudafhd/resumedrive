@@ -1,5 +1,6 @@
 "use client";
 
+import { XIcon } from "lucide-react";
 import { useEffect } from "react";
 
 export type ToastVariant = "info" | "success" | "error";
@@ -15,9 +16,9 @@ type ToastProps = ToastMessage & {
 };
 
 const variantClasses: Record<ToastVariant, string> = {
-  info: "bg-slate-900 text-white",
-  success: "bg-green-600 text-white",
-  error: "bg-red-600 text-white",
+  info: "bg-[var(--color-info)] text-[var(--color-text-inverse)]",
+  success: "bg-[var(--color-success)] text-[var(--color-text-inverse)]",
+  error: "bg-[var(--color-error)] text-[var(--color-text-inverse)]",
 };
 
 export function Toast({ message, variant = "info", onDismiss }: ToastProps) {
@@ -28,16 +29,16 @@ export function Toast({ message, variant = "info", onDismiss }: ToastProps) {
 
   return (
     <div
-      className={`pointer-events-auto flex items-center justify-end gap-3 rounded-xl px-4 py-2 shadow-lg ${variantClasses[variant]}`}
+      className={`pointer-events-auto z-[var(--z-toast)] flex items-center justify-end gap-3 rounded-[var(--radius-xl)] px-4 py-2 shadow-lg ${variantClasses[variant]}`}
       aria-live="polite"
     >
       <span className="text-sm font-medium">{message}</span>
       <button
         type="button"
         onClick={onDismiss}
-        className="rounded-full border border-white/40 px-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/20"
+        className="btn !p-1 text-xs font-semibold uppercase tracking-wide transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
       >
-        close
+        <XIcon className="w-3" />
       </button>
     </div>
   );

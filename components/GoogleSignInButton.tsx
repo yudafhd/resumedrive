@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useAuth } from "./providers/AuthProvider";
+import { useTranslation } from "./providers/LanguageProvider";
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 const SCOPES = [
@@ -24,6 +25,7 @@ export function GoogleSignInButton({
   label,
 }: GoogleSignInButtonProps) {
   const { isAuthenticated, clearCredentials, setCredentials } = useAuth();
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const tokenClientRef = useRef<TokenClient | null>(null);
 
@@ -33,12 +35,12 @@ export function GoogleSignInButton({
     }
 
     if (!CLIENT_ID) {
-      throw new Error("Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID");
+      throw new Error(t("google.missingClientId"));
     }
 
     const googleIdentity = window.google?.accounts?.oauth2;
     if (!googleIdentity) {
-      throw new Error("Google Identity Services failed to load");
+      throw new Error(t("google.identityFailed"));
     }
 
     tokenClientRef.current = googleIdentity.initTokenClient({
@@ -48,11 +50,11 @@ export function GoogleSignInButton({
     });
 
     return tokenClientRef.current;
-  }, []);
+  }, [t]);
 
   const handleSignIn = async () => {
     if (!CLIENT_ID) {
-      onError?.("Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID");
+      onError?.(t("google.missingClientId"));
       return;
     }
 
@@ -64,7 +66,7 @@ export function GoogleSignInButton({
         setIsLoading(false);
 
         if (response.error) {
-          onError?.(`Google sign-in failed: ${response.error}`);
+          onError?.(t("google.signInFailed", { error: response.error }));
           return;
         }
 
@@ -81,7 +83,7 @@ export function GoogleSignInButton({
     } catch (error) {
       setIsLoading(false);
       onError?.(
-        error instanceof Error ? error.message : "Failed to start Google sign-in",
+        error instanceof Error ? error.message : t("google.startFailed"),
       );
     }
   };
@@ -94,23 +96,22 @@ export function GoogleSignInButton({
     return (
       <button
         type="button"
-        className={`rounded-md bg-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 ${className ?? ""}`}
+        // className={`btn bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] ${className ?? ""}`}
         disabled
       >
-        Missing Google Client ID
+        {t("google.missingClientId")}
       </button>
     );
   }
 
   return isAuthenticated ? (
     <div className="flex items-center gap-3">
-      <span className="text-sm text-slate-500">Connected to Google Drive</span>
+      <span className="text-sm text-[var(--color-text-muted)]">{t("google.connected")}</span>
       <button
         type="button"
         onClick={handleSignOut}
-        className={`rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 ${className ?? ""}`}
       >
-        Sign out
+        {t("google.signOut")}
       </button>
     </div>
   ) : (
@@ -118,9 +119,9 @@ export function GoogleSignInButton({
       type="button"
       onClick={handleSignIn}
       disabled={isLoading}
-      className={`flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400 ${className ?? ""}`}
+      className={`btn bg-[var(--color-primary)] text-[var(--color-text-inverse)] hover:bg-[var(--color-primary-hover)] disabled:opacity-60 flex items-center gap-2 ${className ?? ""}`}
     >
-      {isLoading ? "Connecting..." : label ?? "Sign in with Google"}
+      {isLoading ? t("google.connecting") : label ?? t("google.signInWithGoogle")}
     </button>
   );
 }

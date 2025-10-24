@@ -2,6 +2,7 @@
 
 import { CvData } from "@/lib/cv";
 import { RichEditor } from "@/components/RichEditor";
+import { useTranslation } from "./providers/LanguageProvider";
 
 type FormEditorProps = {
   value: CvData;
@@ -9,6 +10,7 @@ type FormEditorProps = {
 };
 
 export function FormEditor({ value, onChange }: FormEditorProps) {
+  const { t } = useTranslation();
   const update = (next: Partial<CvData>) => {
     onChange({ ...value, ...next });
   };
@@ -76,34 +78,37 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
   return (
     <div className="space-y-8">
       <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
+          {t("formEditor.profile")}
+        </h2>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Name
+            <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+              {t("formEditor.name")}
             </label>
             <input
               type="text"
               value={value.name}
               onChange={(event) => update({ name: event.target.value })}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 "
+              className="input"
             />
           </div>
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Title
+            <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+              {t("formEditor.title")}
             </label>
             <input
               type="text"
               value={value.title}
               onChange={(event) => update({ title: event.target.value })}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 "
+              className="input"
             />
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Email
+            <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+              {t("formEditor.email")}
             </label>
             <input
               type="email"
@@ -113,107 +118,106 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
                   contact: { ...value.contact, email: event.target.value },
                 })
               }
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 "
+              className="input"
             />
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Phone
-              </label>
-              <input
-                type="text"
-                value={value.contact.phone ?? ""}
-                onChange={(event) =>
-                  update({
-                    contact: { ...value.contact, phone: event.target.value },
-                  })
-                }
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 "
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Website
-              </label>
-              <input
-                type="text"
-                value={value.contact.website ?? ""}
-                onChange={(event) =>
-                  update({
-                    contact: { ...value.contact, website: event.target.value },
-                  })
-                }
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 "
-              />
-            </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+              {t("formEditor.phone")}
+            </label>
+            <input
+              type="text"
+              value={value.contact.phone ?? ""}
+              onChange={(event) =>
+                update({
+                  contact: { ...value.contact, phone: event.target.value },
+                })
+              }
+              className="input"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+              {t("formEditor.website")}
+            </label>
+            <input
+              type="text"
+              value={value.contact.website ?? ""}
+              onChange={(event) =>
+                update({
+                  contact: { ...value.contact, website: event.target.value },
+                })
+              }
+              className="input"
+            />
           </div>
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Location
+          <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+            {t("formEditor.location")}
           </label>
-          <input
-            type="text"
+          <textarea
             value={value.contact.location ?? ""}
             onChange={(event) =>
               update({
                 contact: { ...value.contact, location: event.target.value },
               })
             }
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1"
+            className="input"
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Summary
+          <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+            {t("formEditor.summary")}
           </label>
-          <RichEditor
-            value={value.summary}
-            onChange={(text) => update({ summary: text })}
-            rows={4}
+          <textarea
+            value={value.summary ?? ""}
+            onChange={(event) => update({ summary: event.target.value })}
+            className="input"
           />
         </div>
-      </section>
+      </section >
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Experience</h2>
+          <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
+            {t("formEditor.experience")}
+          </h2>
           <button
             type="button"
             onClick={addExperience}
-            className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+            className="text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-[var(--focus-ring-offset)] rounded-[var(--radius-sm)]"
           >
-            Add role
+            {t("formEditor.addRole")}
           </button>
         </div>
         {value.experience.length === 0 ? (
-          <p className="text-sm text-slate-500">
-            Add your recent roles to showcase your impact.
+          <p className="text-sm text-[var(--color-text-muted)]">
+            {t("formEditor.emptyExperience")}
           </p>
         ) : (
           <div className="space-y-6">
             {value.experience.map((item, index) => (
               <div
                 key={`${item.company}-${index}`}
-                className="rounded-lg border border-slate-200 p-4 shadow-sm"
+                className="card"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <h3 className="text-sm font-semibold text-slate-700">
-                    Role {index + 1}
+                  <h3 className="text-sm font-semibold text-[var(--color-text-secondary)]">
+                    {t("formEditor.role")} {index + 1}
                   </h3>
                   <button
                     type="button"
                     onClick={() => removeExperience(index)}
-                    className="text-xs font-semibold text-red-500 hover:text-red-600"
+                    className="text-xs font-semibold text-[var(--color-error)] hover:text-[var(--color-accent-red)] transition-colors"
                   >
-                    Remove
+                    {t("formEditor.removeRole")}
                   </button>
                 </div>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Company
+                    <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+                      {t("formEditor.company")}
                     </label>
                     <input
                       type="text"
@@ -223,12 +227,12 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
                           company: event.target.value,
                         })
                       }
-                      className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 "
+                      className="input"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Role
+                    <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+                      {t("formEditor.role")}
                     </label>
                     <input
                       type="text"
@@ -236,7 +240,7 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
                       onChange={(event) =>
                         updateExperience(index, { role: event.target.value })
                       }
-                      className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 "
+                      className="input"
                     />
                   </div>
                 </div>
@@ -247,14 +251,14 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
                     onChange={(event) =>
                       updateExperience(index, { isCurrent: event.target.checked })
                     }
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                   />
-                  I&apos;m currently in this position
+                  {t("formEditor.currentRole")}
                 </label>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Start Date
+                    <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+                      {t("formEditor.startDate")}
                     </label>
                     <input
                       type="text"
@@ -262,27 +266,27 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
                       onChange={(event) =>
                         updateExperience(index, { startDate: event.target.value })
                       }
-                      className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 "
+                      className="input"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      End Date
+                    <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+                      {t("formEditor.endDate")}
                     </label>
                     <input
                       type="text"
-                      value={item.isCurrent ? "Present" : item.endDate ?? ""}
+                      value={item.isCurrent ? t("resumePreview.present") : item.endDate ?? ""}
                       disabled={item.isCurrent}
                       onChange={(event) =>
                         updateExperience(index, { endDate: event.target.value })
                       }
-                      className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                      className="input disabled:cursor-not-allowed disabled:bg-[var(--color-bg-secondary)] disabled:text-[var(--color-text-muted)]"
                     />
                   </div>
                 </div>
                 <div className="mt-4 flex flex-col gap-2">
-                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Description
+                  <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+                    {t("formEditor.description")}
                   </label>
                   <RichEditor
                     value={item.description ?? ""}
@@ -292,6 +296,7 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
                       })
                     }
                     rows={3}
+                    placeholder={t("richEditor.placeholder")}
                   />
                 </div>
               </div>
@@ -302,42 +307,44 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Education</h2>
+          <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
+            {t("formEditor.education")}
+          </h2>
           <button
             type="button"
             onClick={addEducation}
-            className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+            className="text-sm font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-[var(--focus-ring-offset)] rounded-[var(--radius-sm)]"
           >
-            Add school
+            {t("formEditor.addEducation")}
           </button>
         </div>
         {value.education.length === 0 ? (
-          <p className="text-sm text-slate-500">
-            Add academic history or certifications.
+          <p className="text-sm text-[var(--color-text-muted)]">
+            {t("formEditor.emptyEducation")}
           </p>
         ) : (
           <div className="space-y-6">
             {value.education.map((item, index) => (
               <div
                 key={`${item.school}-${index}`}
-                className="rounded-lg border border-slate-200 p-4 shadow-sm"
+                className="card"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <h3 className="text-sm font-semibold text-slate-700">
-                    Entry {index + 1}
+                  <h3 className="text-sm font-semibold text-[var(--color-text-secondary)]">
+                    {t("formEditor.education")} {index + 1}
                   </h3>
                   <button
                     type="button"
                     onClick={() => removeEducation(index)}
-                    className="text-xs font-semibold text-red-500 hover:text-red-600"
+                    className="text-xs font-semibold text-[var(--color-error)] hover:text-[var(--color-accent-red)] transition-colors"
                   >
-                    Remove
+                    {t("formEditor.removeEducation")}
                   </button>
                 </div>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      School
+                    <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+                      {t("formEditor.school")}
                     </label>
                     <input
                       type="text"
@@ -345,12 +352,12 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
                       onChange={(event) =>
                         updateEducation(index, { school: event.target.value })
                       }
-                      className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 "
+                      className="input"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Degree
+                    <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+                      {t("formEditor.degree")}
                     </label>
                     <input
                       type="text"
@@ -358,14 +365,14 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
                       onChange={(event) =>
                         updateEducation(index, { degree: event.target.value })
                       }
-                      className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 "
+                      className="input"
                     />
                   </div>
                 </div>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Start Year
+                    <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+                      {t("formEditor.startYear")}
                     </label>
                     <input
                       type="text"
@@ -373,12 +380,12 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
                       onChange={(event) =>
                         updateEducation(index, { startYear: event.target.value })
                       }
-                      className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 "
+                      className="input"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      End Year
+                    <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+                      {t("formEditor.endYear")}
                     </label>
                     <input
                       type="text"
@@ -386,7 +393,7 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
                       onChange={(event) =>
                         updateEducation(index, { endYear: event.target.value })
                       }
-                      className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 "
+                      className="input"
                     />
                   </div>
                 </div>
@@ -397,12 +404,14 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-slate-900">Skills</h2>
-        <p className="text-sm text-slate-500">
-          Separate skills with commas. Example: TypeScript, React, GCP, Figma
+        <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
+          {t("formEditor.skills")}
+        </h2>
+        <p className="text-sm text-[var(--color-text-muted)]">
+          {t("formEditor.skillsDescription")}
         </p>
-        <input
-          type="text"
+
+        <textarea
           value={skillString}
           onChange={(event) =>
             update({
@@ -412,9 +421,9 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
                 .filter(Boolean),
             })
           }
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 "
+          className="textarea"
         />
       </section>
-    </div>
+    </div >
   );
 }

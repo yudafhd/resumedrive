@@ -1,20 +1,17 @@
 export type AppSettings = {
-    theme: "light" | "dark";
     locale: string;
     recentResumeId?: string | null;
     lastUpdatedAt: string;
     [key: string]: unknown;
 };
 
-const DEFAULT_THEME: AppSettings["theme"] = "light";
 const DEFAULT_LOCALE = "en-US";
 
 export function normalizeSettings(
     input: Record<string, unknown> | null | undefined,
 ): AppSettings {
-    const themeRaw = input?.theme;
-    const theme: AppSettings["theme"] =
-        themeRaw === "dark" ? "dark" : themeRaw === "light" ? "light" : DEFAULT_THEME;
+    const { theme: _legacyTheme, ...rest } = input ?? {};
+    void _legacyTheme;
 
     const localeRaw = input?.locale;
     const locale =
@@ -34,8 +31,7 @@ export function normalizeSettings(
             : new Date().toISOString();
 
     return {
-        ...(input ?? {}),
-        theme,
+        ...rest,
         locale,
         recentResumeId,
         lastUpdatedAt,

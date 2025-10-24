@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Inter, Poppins } from "next/font/google";
 import Script from "next/script";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { AppDataProvider } from "@/components/providers/AppDataProvider";
+import { LanguageProvider } from "@/components/providers/LanguageProvider";
+import SkipLink from "@/components/SkipLink";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,6 +16,19 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-heading",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -26,8 +42,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
   return (
-    <html lang="en">
+    <html
+      lang="id"
+      className={`${inter.variable} ${poppins.variable}`}
+    >
       <head>
         <Script
           src="https://accounts.google.com/gsi/client"
@@ -41,11 +61,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <AppDataProvider>
-            {children}
-          </AppDataProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <AppDataProvider>
+              <SkipLink />
+              {children}
+            </AppDataProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

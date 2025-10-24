@@ -1,12 +1,13 @@
 "use client";
 
 import type { DriveFile } from "@/lib/drive-server";
+import { Trash2Icon } from "lucide-react";
+import { useTranslation } from "./providers/LanguageProvider";
 
 type FileListProps = {
   files: DriveFile[];
   isLoading?: boolean;
   onSelect: (file: DriveFile) => void;
-  onRefresh?: () => void;
   onDelete?: (file: DriveFile) => void;
   title?: string;
 };
@@ -15,11 +16,10 @@ export function FileList({
   files,
   isLoading,
   onSelect,
-  onRefresh,
   onDelete,
-  title,
 }: FileListProps) {
-  // Defensive client-side filter: only show JSON files and hide any spreadsheet/XLSX entries.
+  const { t, language } = useTranslation();
+
   const visibleFiles = (files ?? []).filter((file) => {
     const name = (file.name ?? "").toString();
     const mime = (file.mimeType ?? "").toString();
@@ -30,68 +30,63 @@ export function FileList({
 
   if (isLoading) {
     return (
-      <div className="rounded-lg border border-slate-200 p-6 text-center text-sm text-slate-500">
-        Loading files from Google Drive…
+      <div className="card text-center text-sm text-[var(--color-text-muted)]">
+        {t("fileList.loading")}
       </div>
     );
   }
 
   if (!visibleFiles.length) {
     return (
-      <div className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">
-        No app files found. Create a file from the editor or upload one with the
-        Google Picker.
+      <div className="card border-dashed text-center text-sm text-[var(--color-text-muted)]">
+        {t("fileList.empty")}
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-600">{title ?? "Drive files"}</h3>
-        {onRefresh && (
-          <button
-            type="button"
-            onClick={onRefresh}
-            className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+    <>
+      {visibleFiles.map((file) => {
+        const formattedDate =
+          file.modifiedTime && language
+            ? new Date(file.modifiedTime).toLocaleDateString(language, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })
+            : null;
+        return (
+          <section
+            key={file.id}
+            className="card group flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 px-4 py-3 shadow-[0px_20px_40px_-24px_rgba(15,23,42,0.45)] ring-1 ring-slate-200/60 backdrop-blur-sm hover:shadow-[0px_24px_48px_-24px_rgba(15,23,42,0.5)] hover:ring-blue-200"
           >
-            Refresh
-          </button>
-        )}
-      </div>
-      <ul className="space-y-2">
-        {visibleFiles.map((file) => (
-          <li key={file.id}>
-            <div className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:border-blue-400 hover:shadow">
+            <button
+              type="button"
+              onClick={() => onSelect(file)}
+              className="flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-[var(--focus-ring-offset)] rounded-[var(--radius-lg)]"
+            >
+              <p className="text-sm !mb-2 font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)]">
+                {file.name}
+              </p>
+              {formattedDate && (
+                <span className="mt-1 text-xs text-[var(--color-text-muted)]">
+                  {t("fileList.updatedAt", { date: formattedDate })}
+                </span>
+              )}
+            </button>
+            {onDelete && (
               <button
                 type="button"
-                onClick={() => onSelect(file)}
-                className="flex-1 text-left"
+                onClick={() => onDelete(file)}
+                className="p-2"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-slate-800">
-                    {file.name}
-                  </span>
-                </div>
-                {file.modifiedTime && (
-                  <p className="mt-1 text-xs text-slate-500">
-                    Updated {new Date(file.modifiedTime).toLocaleString()}
-                  </p>
-                )}
+                <Trash2Icon className="w-4 h-4" />
               </button>
-              {onDelete && (
-                <button
-                  type="button"
-                  onClick={() => onDelete(file)}
-                  className="ml-3 text-xs font-semibold text-red-500 transition hover:text-red-600"
-                >
-                  Delete
-                </button>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
+            )}
+          </section>
+        );
+      })}
+    </>
   );
 }
+

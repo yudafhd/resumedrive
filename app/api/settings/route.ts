@@ -25,7 +25,6 @@
  *     -H "Authorization: Bearer <ACCESS_TOKEN>" \
  *     -H "Content-Type: application/json" \
  *     -d '{
- *       "theme": "dark",
  *       "locale": "en-US",
  *       "recentResumeId": "abc123",
  *       "lastUpdatedAt": "2025-01-01T00:00:00.000Z",

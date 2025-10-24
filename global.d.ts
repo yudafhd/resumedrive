@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+declare module '*.css';
 
 declare namespace google {
   namespace accounts {

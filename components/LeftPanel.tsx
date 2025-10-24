@@ -7,6 +7,7 @@ import { useAuth } from "./providers/AuthProvider";
 import { FileList } from "./FileList";
 import type { DriveFile } from "@/lib/drive-server";
 import { useAppData } from "@/components/providers/AppDataProvider";
+import { useTranslation } from "./providers/LanguageProvider";
 
 type LeftPanelProps = {
     isAuthenticated: boolean;
@@ -22,6 +23,7 @@ export function LeftPanel({ isAuthenticated, onSelectFile, loading: isSaving, on
     const triggerImport = () => fileInputRef.current?.click();
     const { accessToken } = useAuth();
     const { files, loading, error, refresh, remove } = useAppData();
+    const { t } = useTranslation();
 
     // Defensive client-side filter: ensure only JSON files are surfaced,
     // and hide any spreadsheet or .xlsx legacy entries.
@@ -43,34 +45,37 @@ export function LeftPanel({ isAuthenticated, onSelectFile, loading: isSaving, on
     const handleDelete = async (file: DriveFile) => {
         if (!accessToken) return;
         if (!file.id) return;
-        const confirmed = window.confirm(`Delete "${file.name}" from Google Drive?`);
+        const confirmed = window.confirm(
+            t("leftPanel.confirmDelete", { name: file.name ?? "" }),
+        );
         if (!confirmed) return;
 
         try {
             await remove(file.id);
         } catch (err) {
             console.error("Failed to delete Drive file", err);
-            alert(err instanceof Error ? err.message : "Failed to delete file.");
+            alert(err instanceof Error ? err.message : t("leftPanel.deleteError"));
         }
     };
 
     return (
-        <aside className="bg-[var(--surface-subtle)] space-y-4">
-            <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm space-y-2">
-                <div>
-                    <h2 className="text-sm font-semibold text-slate-900">Local Drive</h2>
-                    <p className="mt-1 text-sm text-slate-600">
-                        kamu dapat menyimpan dan mengimport resume secara local di devicemu
+        <aside className="space-y-6">
+            <section className="card space-y-4">
+                <header className="space-y-1">
+                    <span className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-text-muted)]">{t("leftPanel.workspaceLabel")}</span>
+                    <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">{t("leftPanel.localDraftsTitle")}</h2>
+                    <p className="text-sm text-[var(--color-text-muted)]">
+                        {t("leftPanel.localDraftsDescription")}
                     </p>
-                </div>
-                <div className="space-x-2">
+                </header>
+                <div className="flex flex-wrap items-center gap-2">
                     <button
                         type="button"
                         onClick={onDownloadJson}
-                        className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                        aria-label="Download JSON"
+                        className="btn"
+                        aria-label={t("leftPanel.downloadJson")}
                     >
-                        Download
+                        {t("leftPanel.downloadJson")}
                     </button>
                     <input
                         ref={fileInputRef}
@@ -84,45 +89,58 @@ export function LeftPanel({ isAuthenticated, onSelectFile, loading: isSaving, on
                     <button
                         type="button"
                         onClick={triggerImport}
-                        className="inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                        aria-label="Import JSON"
+                        className="btn"
+                        aria-label={t("leftPanel.importJson")}
                     >
-                        Import
+                        {t("leftPanel.importJson")}
                     </button>
                 </div>
-            </div>
+            </section>
 
             {!isAuthenticated ? (
                 <div className="space-y-4">
-                    <QuickStartChecklist className="bg-[var(--surface)] border-[var(--border)] text-slate-800" />
+                    <QuickStartChecklist className="space-y-3 text-[var(--color-text-primary)]" />
+                    <GoogleSignInButton />
                 </div>
             ) : (
                 <div className="space-y-4">
-                    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 space-y-2 shadow-sm">
-                        <div>
-                            <h2 className="text-sm font-semibold text-slate-900">Google Drive</h2>
-                            <p className="mt-1 text-sm text-slate-600">
-                                Resumes you save live in Google private <code className="rounded bg-slate-100 px-1 text-xs">appDataFolder</code>.
-                                Use the list below to reopen them.
+                    <section className="card space-y-4">
+                        <header className="space-y-1">
+                            <span className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-text-muted)]">{t("leftPanel.driveLabel")}</span>
+                            <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">{t("leftPanel.driveTitle")}</h2>
+                            <p className="text-sm text-[var(--color-text-muted)]">
+                                {t("leftPanel.driveDescriptionPrefix")}{" "}
+                                <code className="rounded-full bg-[var(--color-bg-tertiary)] px-2 py-0.5 text-[var(--text-xs)]">
+                                    appDataFolder
+                                </code>
+                                {t("leftPanel.driveDescriptionSuffix")}
                             </p>
-                        </div>
+                        </header>
 
-                        <div>
+                        <div className="flex items-center gap-2">
                             <button
                                 type="button"
                                 onClick={onSave}
                                 disabled={isSaving || loading}
-                                className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                                aria-label="Save to Drive"
+                                className="btn bg-[var(--color-primary)] border-transparent text-[var(--color-text-inverse)] hover:bg-[var(--color-primary-hover)] disabled:opacity-60"
+                                aria-label={t("leftPanel.syncToDrive")}
                             >
-                                {isSaving || loading ? "Loading" : "Save to Drive"}
+                                {isSaving || loading ? t("leftPanel.syncingToDrive") : t("leftPanel.syncToDrive")}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={refresh}
+                                disabled={loading}
+                                className="btn"
+                            >
+                                {t("leftPanel.refresh")}
                             </button>
                         </div>
-                    </div>
+                    </section>
 
                     {Boolean(error) && (
-                        <div className="rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-                            Failed to load saved files. Try Refresh.
+                        <div className="rounded-2xl border border-red-100 bg-red-50/70 px-4 py-3 text-xs text-red-600">
+                            {t("leftPanel.failedToLoadFiles")}
                         </div>
                     )}
 
@@ -130,13 +148,11 @@ export function LeftPanel({ isAuthenticated, onSelectFile, loading: isSaving, on
                         files={visibleFiles}
                         isLoading={isSaving || loading}
                         onSelect={handleSelect}
-                        onRefresh={refresh}
                         onDelete={handleDelete}
-                        title="Saved files"
                     />
+                    <GoogleSignInButton />
                 </div>
             )}
-            <GoogleSignInButton />
         </aside>
     );
 }

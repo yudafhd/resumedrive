@@ -1,49 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { ChangeEvent, useRef } from "react";
-import { GoogleSignInButton } from "./GoogleSignInButton";
+import LanguageToggle from "./LanguageToggle";
+import { useTranslation } from "./providers/LanguageProvider";
 
 type HeaderBarProps = {
     activeTab: "editor" | "preview";
     onTabChange: (value: "editor" | "preview") => void;
     onToggleLeft: () => void;
-    onSave: () => void;
-    onImport: (event: ChangeEvent<HTMLInputElement>) => void;
-    onDownloadJson: () => void;
-    onDownloadPdf: () => void;
 };
 
 export function HeaderBar({
     activeTab,
     onTabChange,
     onToggleLeft,
-    onSave,
-    onImport,
-    onDownloadJson,
-    onDownloadPdf,
 }: HeaderBarProps) {
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const triggerImport = () => fileInputRef.current?.click();
+    const { t } = useTranslation();
 
     const tabClasses = (isActive: boolean) =>
         [
-            "px-3 py-1.5 text-sm font-semibold rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
+            "px-3 py-1.5 text-sm font-semibold rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-[var(--focus-ring-offset)] transition-all",
             isActive
-                ? "bg-blue-600 text-white"
-                : "text-slate-700 hover:text-blue-700",
+                ? "bg-[var(--color-primary)] text-[var(--color-text-inverse)]"
+                : "text-[var(--color-text-secondary)] hover:text-[var(--color-primary)]",
         ].join(" ");
 
     return (
-        <div className="sticky top-0 z-40 bg-[var(--surface)] border-b border-[var(--border)] px-4 sm:px-6">
-            <div className="h-16 flex items-center justify-between gap-3">
+        <header className="top-0 backdrop-blur">
+            <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
                 {/* Left cluster: drawer toggle (md-), brand */}
                 <div className="flex items-center gap-2">
                     <button
                         type="button"
-                        aria-label="Open left panel"
+                        aria-label={t("header.openLeftPanel")}
                         onClick={onToggleLeft}
-                        className="inline-flex items-center justify-center rounded-md p-2 text-slate-600 hover:bg-slate-100 md:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                        className="inline-flex items-center justify-center rounded-[var(--radius-md)] p-3 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] md:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-[var(--focus-ring-offset)] transition-all min-h-[44px] min-w-[44px]"
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                             <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -53,7 +44,7 @@ export function HeaderBar({
                     <Link
                         href="/"
                         aria-label="Resume Drive home"
-                        className="text-sm font-extrabold tracking-wider text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                        className="text-sm font-extrabold tracking-wider text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-[var(--focus-ring-offset)] transition-all"
                     >
                         RESUME DRIVE
                     </Link>
@@ -63,7 +54,7 @@ export function HeaderBar({
                 <div
                     role="tablist"
                     aria-label="View mode"
-                    className="flex items-center rounded-full border border-[var(--border)] bg-[var(--surface-subtle)] p-1"
+                    className="flex items-center text-xs gap-1 rounded-full"
                 >
                     <button
                         role="tab"
@@ -72,8 +63,9 @@ export function HeaderBar({
                         onClick={() => onTabChange("editor")}
                         className={tabClasses(activeTab === "editor")}
                     >
-                        Editor
+                        {t("header.editorTab")}
                     </button>
+
                     <button
                         role="tab"
                         aria-selected={activeTab === "preview"}
@@ -81,11 +73,15 @@ export function HeaderBar({
                         onClick={() => onTabChange("preview")}
                         className={tabClasses(activeTab === "preview")}
                     >
-                        Preview
+                        {t("header.previewTab")}
                     </button>
                 </div>
+
+                <div className="flex items-center gap-2">
+                    <LanguageToggle />
+                </div>
             </div>
-        </div>
+        </header>
     );
 }
 

@@ -5,12 +5,14 @@ import { Toast, ToastMessage } from "@/components/Toast";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useAppData } from "@/components/providers/AppDataProvider";
+import { useTranslation } from "./providers/LanguageProvider";
 
 export function ConfigPanel() {
   const toastIdRef = useRef(0);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const { isAuthenticated } = useAuth();
   const { files, loading, refresh } = useAppData();
+  const { t, language } = useTranslation();
 
   const showToast = (
     message: string,
@@ -22,7 +24,7 @@ export function ConfigPanel() {
 
   const handleSignedIn = async () => {
     await refresh();
-    showToast("Signed in successfully.", "success");
+    showToast(t("configPanel.signedInSuccess"), "success");
   };
 
   const totalFiles = files.length;
@@ -31,17 +33,17 @@ export function ConfigPanel() {
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h2 className="text-lg font-semibold text-slate-900">
-          Save to Google Drive
+        <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
+          {t("configPanel.title")}
         </h2>
-        <p className="text-sm text-slate-500">
-          Resumes sync to your Google Drive{" "}
-          <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          {t("configPanel.descriptionPrefix")}{" "}
+          <code className="rounded bg-[var(--color-bg-tertiary)] px-1 py-0.5 text-xs">
             appDataFolder
           </code>
-          , keeping them private to this app.
+          {t("configPanel.descriptionSuffix")}
         </p>
-        <div className="flex flex-wrap items-center gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-center gap-4 card">
           <GoogleSignInButton
             onSignedIn={handleSignedIn}
             onError={(message) => showToast(message, "error")}
@@ -52,39 +54,52 @@ export function ConfigPanel() {
               onClick={() => {
                 void refresh();
               }}
-              className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
+              className="btn border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)]"
             >
-              Refresh files
+              {t("configPanel.refreshFiles")}
             </button>
           )}
         </div>
       </header>
 
-      <section className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Stored resumes
+      <section className="surface">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+          {t("configPanel.storedResumes")}
         </h3>
         {isAuthenticated ? (
-          <div className="mt-2 space-y-1 text-sm text-slate-700">
+          <div className="mt-2 space-y-1 text-sm text-[var(--color-text-secondary)]">
             {loading ? (
-              <p>Loading saved files…</p>
+              <p>{t("configPanel.loadingFiles")}</p>
             ) : totalFiles > 0 ? (
               <>
-                <p>{totalFiles} file{totalFiles === 1 ? "" : "s"} saved.</p>
+                <p>
+                  {t("configPanel.filesSaved", {
+                    count: totalFiles,
+                    suffix:
+                      language === "en"
+                        ? totalFiles === 1
+                          ? ""
+                          : "s"
+                        : "",
+                  })}
+                </p>
                 {latestFile && latestFile.modifiedTime && (
-                  <p className="text-xs text-slate-500">
-                    Latest update:{" "}
-                    {new Date(latestFile.modifiedTime).toLocaleString()}
+                  <p className="text-xs text-[var(--color-text-muted)]">
+                    {t("configPanel.latestUpdate", {
+                      date: new Date(latestFile.modifiedTime).toLocaleString(
+                        language,
+                      ),
+                    })}
                   </p>
                 )}
               </>
             ) : (
-              <p>No saved resumes yet.</p>
+              <p>{t("configPanel.noSavedResumes")}</p>
             )}
           </div>
         ) : (
-          <p className="mt-2 text-sm text-slate-600">
-            Connect with Google to create a private backup.
+          <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+            {t("configPanel.connectPrompt")}
           </p>
         )}
       </section>

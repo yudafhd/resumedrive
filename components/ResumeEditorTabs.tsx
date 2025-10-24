@@ -5,6 +5,7 @@ import { FormEditor } from "@/components/FormEditor";
 import { ConfigPanel } from "@/components/ConfigPanel";
 import { ResumePreview } from "@/components/ResumePreview";
 import { type CvData as ResumeData } from "@/lib/cv";
+import { useTranslation } from "./providers/LanguageProvider";
 
 type EditorTabProps = {
   resume: ResumeData;
@@ -15,12 +16,22 @@ export function EditorTab({
   resume,
   onChange,
 }: EditorTabProps) {
+  const { t } = useTranslation();
+
   return (
-    <>
-      <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <FormEditor value={resume} onChange={onChange} />
-      </section>
-    </>
+    <section className="card space-y-6">
+      <header className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
+            {t("resumeTabs.editorTitle")}
+          </h2>
+          <p className="text-sm text-[var(--color-text-muted)]">
+            {t("resumeTabs.editorDescription")}
+          </p>
+        </div>
+      </header>
+      <FormEditor value={resume} onChange={onChange} />
+    </section>
   );
 }
 
@@ -35,21 +46,29 @@ export function PreviewTab({
   onDownloadPdf,
   previewRef,
 }: PreviewTabProps) {
+  const { t } = useTranslation();
+
   return (
-    <>
-      <div className="flex justify-end">
+    <section className="card space-y-6">
+      <header className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
+            {t("resumeTabs.previewTitle")}
+          </h2>
+          <p className="text-sm text-[var(--color-text-muted)]">
+            {t("resumeTabs.previewDescription")}
+          </p>
+        </div>
         <button
           type="button"
           onClick={onDownloadPdf}
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+          className="btn bg-[var(--color-primary)] border-transparent text-[var(--color-text-inverse)] hover:bg-[var(--color-primary-hover)]"
         >
-          Download PDF
+          {t("resumeTabs.exportPdf")}
         </button>
-      </div>
-      <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <ResumePreview ref={previewRef} resume={resume} />
-      </section>
-    </>
+      </header>
+      <ResumePreview ref={previewRef} resume={resume} />
+    </section>
   );
 }
 
@@ -76,19 +95,21 @@ export function ConfigTab({
   isLoadingFromDrive,
   onImportJson,
 }: ConfigTabProps) {
+  const { t } = useTranslation();
+
   return (
     <>
-      <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="card space-y-4">
         <div className="grid grid-cols-1 gap-4">
           <div className="flex flex-col">
-            <label className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              File name
+            <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+              {t("resumeTabs.configFileName")}
             </label>
             <input
               type="text"
               value={fileName}
               onChange={(event) => onFileNameChange(event.target.value)}
-              className="w-64 rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-1"
+              className="input max-w-xs"
             />
           </div>
           <div className="flex flex-wrap items-end gap-2">
@@ -96,27 +117,27 @@ export function ConfigTab({
               type="button"
               onClick={onSaveJson}
               disabled={isSaving}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
+              className="btn bg-[var(--color-primary)] text-[var(--color-text-inverse)] hover:bg-[var(--color-primary-hover)] disabled:opacity-60"
             >
-              {isSaving ? "Saving…" : "Save to Drive"}
+              {isSaving ? t("resumeTabs.syncingToDrive") : t("resumeTabs.syncToDrive")}
             </button>
             <button
               type="button"
               onClick={onLoadFromDrive}
               disabled={!canLoadFromDrive || isLoadingFromDrive}
-              className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+              className="btn border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] disabled:opacity-60"
             >
-              {isLoadingFromDrive ? "Loading…" : "Load from Drive"}
+              {isLoadingFromDrive ? t("resumeTabs.loadingFromDrive") : t("resumeTabs.loadFromDrive")}
             </button>
             <button
               type="button"
               onClick={onDownloadJson}
-              className="rounded-md border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+              className="btn border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)]"
             >
-              Save to local
+              {t("resumeTabs.saveToLocal")}
             </button>
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100">
-              Load from local
+            <label className="btn border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] cursor-pointer">
+              {t("resumeTabs.loadFromLocal")}
               <input
                 type="file"
                 accept=".json,application/json"
@@ -127,7 +148,7 @@ export function ConfigTab({
           </div>
         </div>
       </section>
-      <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="card">
         <ConfigPanel />
       </section>
     </>

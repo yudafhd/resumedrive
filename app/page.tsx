@@ -13,11 +13,7 @@ import { useResource } from "@/lib/async";
 import { cache } from "@/lib/cache";
 import { Toast, ToastMessage } from "@/components/Toast";
 import { useAuth } from "@/components/providers/AuthProvider";
-import {
-    ConfigTab,
-    EditorTab,
-    PreviewTab,
-} from "@/components/ResumeEditorTabs";
+import { EditorTab, PreviewTab } from "@/components/ResumeEditorTabs";
 import type { DriveFile } from "@/lib/drive-server";
 import {
     type CvData as ResumeData,
@@ -31,11 +27,11 @@ import {
 } from "@/lib/storage";
 import HeaderBar from "@/components/HeaderBar";
 import LeftPanel from "@/components/LeftPanel";
-import RightSettingsDrawer from "@/components/RightSettingsDrawer";
 import { fetchAppSettings, saveAppSettings } from "@/lib/settings-client";
 import { createSettingsPayload } from "@/lib/app-settings";
 import type { AppSettings } from "@/lib/app-settings";
 import { useAppData } from "@/components/providers/AppDataProvider";
+import { useTranslation } from "@/components/providers/LanguageProvider";
 
 type ToastType = ToastMessage["variant"];
 type TabId = "editor" | "preview" | "config";
@@ -44,6 +40,7 @@ function ResumeEditorPageContent() {
     const searchParams = useSearchParams();
     const { accessToken, isAuthenticated } = useAuth();
     const { upload: uploadAppData } = useAppData();
+    const { t } = useTranslation();
 
     const initialFileId = searchParams.get("fileId");
     const requestedMime = searchParams.get("mimeType") ?? undefined;
@@ -59,7 +56,6 @@ function ResumeEditorPageContent() {
     );
     const [toast, setToast] = useState<ToastMessage | null>(null);
     const [isSaving, setIsSaving] = useState(false);
-    const [isLoadingFromDrive, setIsLoadingFromDrive] = useState(false);
     const toastIdRef = useRef(0);
     const [activeTab, setActiveTab] = useState<TabId>("editor");
     const previewRef = useRef<HTMLDivElement | null>(null);
@@ -125,7 +121,7 @@ function ResumeEditorPageContent() {
 
     const handleDownloadPdf = () => {
         if (!previewRef.current) {
-            showToast("Open the Preview tab before downloading.", "error");
+            showToast(t("page.previewRequired"), "error");
             return;
         }
 
@@ -133,12 +129,12 @@ function ResumeEditorPageContent() {
 
         const styles = `
       <style>
-        body { font-family: Arial, sans-serif; margin: 40px; color: #0f172a; }
-        h1,h2,h3 { color: #0f172a; }
+        body { font-family: Arial, sans-serif; margin: 40px; color: #111827; }
+        h1,h2,h3 { color: #111827; }
         .section { margin-bottom: 24px; }
-        .tag { display: inline-block; padding: 6px 12px; border-radius: 999px; border: 1px solid #1d4ed8; color: #1d4ed8; margin: 4px 8px 0 0; font-size: 12px; font-weight: 600; }
+        .tag { display: inline-block; padding: 6px 12px; border-radius: 999px; border: 1px solid #1e40af; color: #1e40af; margin: 4px 8px 0 0; font-size: 12px; font-weight: 600; }
         .card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-        .meta { color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+        .meta { color: #374151; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
       </style>
     `;
 
@@ -156,7 +152,7 @@ function ResumeEditorPageContent() {
 
         const w = iframe.contentWindow;
         if (!w || !w.document) {
-            showToast("Unable to prepare print preview", "error");
+            showToast(t("page.printPreviewError"), "error");
             try {
                 document.body.removeChild(iframe);
             } catch { }
@@ -240,16 +236,16 @@ function ResumeEditorPageContent() {
                     setFileName("Resume.json");
                     setCurrentFileId(null);
                     setCurrentMime(MIME_JSON);
-                    showToast("Loaded draft from local storage.", "success");
+                    showToast(t("page.loadedDraft"), "success");
                 } catch (error) {
                     showToast(
-                        error instanceof Error ? error.message : "Draft is invalid.",
+                        error instanceof Error ? error.message : t("page.invalidDraft"),
                         "error",
                     );
                 }
             }
         }
-    }, [fileQuery.data, hasDraftFlag]);
+    }, [fileQuery.data, hasDraftFlag, t]);
 
     useEffect(() => {
         saveDraft(resume);
@@ -257,7 +253,7 @@ function ResumeEditorPageContent() {
 
     const handleSaveJson = async () => {
         if (!accessToken) {
-            showToast("Sign in to save your resume.", "error");
+            showToast(t("page.signInToSave"), "error");
             return;
         }
 
@@ -280,17 +276,20 @@ function ResumeEditorPageContent() {
             } catch (settingsError) {
                 showToast(
                     settingsError instanceof Error
-                        ? `Saved resume but failed to sync settings: ${settingsError.message}`
-                        : "Saved resume but failed to sync settings.",
+                        ? t("page.saveSettingsFailed", { message: `: ${settingsError.message}` })
+                        : t("page.saveSettingsFailed", { message: "" }),
                     "error",
                 );
             }
             cache.invalidate(["file:current", accessToken ?? "", currentFileId ?? ""]);
-            showToast(`Saved ${result.name} to Drive.`, "success");
+            showToast(
+                t("page.savedToDrive", { name: result.name ?? name }),
+                "success",
+            );
             clearDraft();
         } catch (error) {
             showToast(
-                error instanceof Error ? error.message : "Failed to save JSON.",
+                error instanceof Error ? error.message : t("page.saveJsonFailed"),
                 "error",
             );
         } finally {
@@ -316,19 +315,19 @@ function ResumeEditorPageContent() {
                 } catch (settingsError) {
                     showToast(
                         settingsError instanceof Error
-                            ? `Imported resume but failed to sync settings: ${settingsError.message}`
-                            : "Imported resume but failed to sync settings.",
+                            ? t("page.importedSettingsFailed", { message: `: ${settingsError.message}` })
+                            : t("page.importedSettingsFailed", { message: "" }),
                         "error",
                     );
                 }
             }
-            showToast(`Imported ${file.name}`, "success");
+            showToast(t("page.importedFile", { name: file.name }), "success");
         } catch (error) {
             if (error instanceof SyntaxError) {
-                showToast("JSON file is invalid.", "error");
+                showToast(t("page.invalidJson"), "error");
             } else {
                 showToast(
-                    error instanceof Error ? error.message : "Failed to import JSON.",
+                    error instanceof Error ? error.message : t("page.importFailed"),
                     "error",
                 );
             }
@@ -337,49 +336,9 @@ function ResumeEditorPageContent() {
         }
     };
 
-    const handleLoadFromDrive = async () => {
-        if (!accessToken) {
-            showToast("Sign in to load your resume from Drive.", "error");
-            return;
-        }
-
-        const fallbackStored = settings?.recentResumeId ?? null;
-        const targetFileId = fallbackStored ?? currentFileId;
-
-        if (!targetFileId) {
-            showToast(
-                "No Drive resume found. Save one first or pick a file from the Save tab.",
-                "info",
-            );
-            return;
-        }
-
-        setIsLoadingFromDrive(true);
-
-        try {
-            if (targetFileId !== currentFileId) {
-                setCurrentFileId(targetFileId);
-            }
-
-            await fileQuery.refetch();
-            if (fileQuery.error) {
-                throw fileQuery.error as Error;
-            }
-
-            showToast("Resume loaded from Drive.", "success");
-        } catch (error) {
-            showToast(
-                error instanceof Error ? error.message : "Failed to load from Drive.",
-                "error",
-            );
-        } finally {
-            setIsLoadingFromDrive(false);
-        }
-    };
-
     const handleSelectDriveFile = async (fileId: string) => {
         if (!accessToken) {
-            showToast("Sign in to load your resume from Drive.", "error");
+            showToast(t("page.signInToLoad"), "error");
             return;
         }
         try {
@@ -393,8 +352,8 @@ function ResumeEditorPageContent() {
             } catch (settingsError) {
                 showToast(
                     settingsError instanceof Error
-                        ? `Loaded resume but failed to sync settings: ${settingsError.message}`
-                        : "Loaded resume but failed to sync settings.",
+                        ? t("page.loadedSettingsFailed", { message: `: ${settingsError.message}` })
+                        : t("page.loadedSettingsFailed", { message: "" }),
                     "error",
                 );
             }
@@ -404,10 +363,10 @@ function ResumeEditorPageContent() {
                 throw fileQuery.error as Error;
             }
 
-            showToast("Resume loaded from Drive.", "success");
+            showToast(t("page.loadedFromDrive"), "success");
         } catch (error) {
             showToast(
-                error instanceof Error ? error.message : "Failed to load from Drive.",
+                error instanceof Error ? error.message : t("page.loadFailed"),
                 "error",
             );
         }
@@ -425,21 +384,15 @@ function ResumeEditorPageContent() {
         URL.revokeObjectURL(url);
     };
 
-    const canLoadFromDrive = Boolean(accessToken && (settings?.recentResumeId ?? currentFileId));
-
     return (
-        <div className="min-h-screen bg-[var(--surface-subtle)] text-[var(--text)]">
+        <div className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-text-primary)]">
             <HeaderBar
                 activeTab={activeTab === "preview" ? "preview" : "editor"}
                 onTabChange={(t) => setActiveTab(t)}
                 onToggleLeft={() => setLeftPanelOpen((v) => !v)}
-                onSave={handleSaveJson}
-                onImport={handleImportJson}
-                onDownloadJson={downloadJson}
-                onDownloadPdf={handleDownloadPdf}
             />
-            <div className="px-4 md:px-6 py-6">
-                <main className="grid grid-cols-1 gap-2 md:grid-cols-10 md:gap-6">
+            <main id="main-content" className="mx-auto max-w-7xl px-4 md:px-6 py-6" role="main">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-10">
                     <div className="hidden md:block col-span-3">
                         <LeftPanel
                             onSave={handleSaveJson}
@@ -450,42 +403,42 @@ function ResumeEditorPageContent() {
                             loading={isSaving}
                         />
                     </div>
-                    {activeTab === "editor" ? <div className="col-span-7">
+                    {activeTab === "editor" ? <div className="col-span-7 space-y-4">
                         <EditorTab
                             resume={resume}
                             onChange={setResume}
                         />
-                    </div> : <div className="col-span-7">
+                    </div> : <div className="col-span-7 space-y-4">
                         <PreviewTab
                             resume={resume}
                             onDownloadPdf={handleDownloadPdf}
                             previewRef={previewRef}
                         />
                     </div>}
-                </main>
-            </div>
+                </div>
+            </main>
 
             {/* Mobile left panel drawer */}
             <div className={`fixed inset-0 z-50 transition-opacity ${leftPanelOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
                 <div
-                    className="absolute inset-0 bg-black/30"
+                    className="absolute inset-0 bg-black/30 backdrop-blur-sm"
                     aria-hidden="true"
                     onClick={() => setLeftPanelOpen(false)}
                 />
-                <div className={`absolute inset-y-0 left-0 w-72 bg-[var(--surface)] border-r border-[var(--border)] shadow-xl transition-transform ${leftPanelOpen ? "translate-x-0" : "-translate-x-full"}`}>
-                    <div className="flex h-14 items-center justify-end border-b border-[var(--border)] px-3">
+                <div className={`absolute inset-y-0 left-0 max-w-[90vw] bg-[var(--color-bg-secondary)] border-r border-[var(--color-border)] shadow-xl transition-transform duration-300 ease-in-out ${leftPanelOpen ? "translate-x-0" : "-translate-x-full"}`}>
+                    <div className="flex h-14 items-center justify-end border-b border-[var(--color-border)] px-3">
                         <button
                             type="button"
                             aria-label="Close left panel"
                             onClick={() => setLeftPanelOpen(false)}
-                            className="inline-flex items-center justify-center rounded-md p-2 text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                            className="inline-flex items-center justify-center rounded-md p-3 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-[var(--focus-ring-offset)] min-h-[44px] min-w-[44px]"
                         >
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                 <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                             </svg>
                         </button>
                     </div>
-                    <div className="h-[calc(100vh-56px)] overflow-auto p-4">
+                    <div className="h-[calc(100vh-56px)] overflow-y-auto overscroll-contain p-4">
                         <LeftPanel
                             onSave={handleSaveJson}
                             onImport={handleImportJson}

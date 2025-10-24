@@ -2,6 +2,7 @@
 
 import { forwardRef } from "react";
 import { type CvData as ResumeData } from "@/lib/cv";
+import { useTranslation } from "./providers/LanguageProvider";
 
 type ResumePreviewProps = {
   resume: ResumeData;
@@ -9,16 +10,17 @@ type ResumePreviewProps = {
 
 export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
   ({ resume }, ref) => {
+    const { t } = useTranslation();
     return (
       <div ref={ref} className="space-y-6">
-        <header className="border-b border-slate-200 pb-4">
-          <h2 className="text-3xl font-bold text-slate-900">
-            {resume.name || "Your Name"}
+        <header className="border-b border-[var(--color-border)] pb-4">
+          <h2 className="text-3xl font-bold text-[var(--color-text-primary)]">
+            {resume.name || t("resumePreview.fallbackName")}
           </h2>
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            {resume.title || "Professional Title"}
+          <p className="text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+            {resume.title || t("resumePreview.fallbackTitle")}
           </p>
-          <div className="mt-3 flex flex-wrap gap-1 text-sm text-slate-500">
+          <div className="mt-3 flex flex-wrap gap-1 text-sm text-[var(--color-text-muted)]">
             {resume.contact.location && <span>{resume.contact.location} |</span>}
             {resume.contact.email && <span>{resume.contact.email} |</span>}
             {resume.contact.phone && <span>{resume.contact.phone} |</span>}
@@ -27,7 +29,7 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
                 href={resume.contact.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
+                className="text-[var(--color-primary)] hover:underline transition-colors"
               >
                 {resume.contact.website}
               </a>
@@ -38,11 +40,11 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
 
         {resume.summary && (
           <section className="space-y-2">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Summary
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+              {t("resumePreview.summary")}
             </h3>
             <div
-              className="text-sm leading-relaxed text-slate-700"
+              className="text-sm leading-relaxed text-[var(--color-text-secondary)]"
               dangerouslySetInnerHTML={{ __html: resume.summary }}
             />
           </section>
@@ -50,30 +52,32 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
 
         {resume.experience.length > 0 && (
           <section className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Experience
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+              {t("resumePreview.experience")}
             </h3>
             <div className="space-y-4">
               {resume.experience.map((item, index) => (
                 <article
                   key={`${item.company}-${index}`}
-                  className="rounded-lg border border-slate-100 p-4 shadow-sm"
+                  className="card"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">
+                      <p className="text-sm font-semibold text-[var(--color-text-primary)]">
                         {item.role}
                       </p>
-                      <p className="text-xs text-slate-500">{item.company}</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">{item.company}</p>
                     </div>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-[var(--color-text-muted)]">
                       {item.startDate} —{" "}
-                      {item.isCurrent ? "Present" : item.endDate || "Present"}
+                      {item.isCurrent
+                        ? t("resumePreview.present")
+                        : item.endDate || t("resumePreview.present")}
                     </p>
                   </div>
                   {item.description && (
                     <div
-                      className="mt-3 text-sm leading-relaxed text-slate-600"
+                      className="mt-3 text-sm leading-relaxed text-[var(--color-text-secondary)]"
                       dangerouslySetInnerHTML={{ __html: item.description }}
                     />
                   )}
@@ -85,21 +89,21 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
 
         {resume.education.length > 0 && (
           <section className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Education
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+              {t("resumePreview.education")}
             </h3>
             <div className="space-y-4">
               {resume.education.map((item, index) => (
                 <article
                   key={`${item.school}-${index}`}
-                  className="rounded-lg border border-slate-100 p-4 shadow-sm"
+                  className="card"
                 >
-                  <p className="text-sm font-semibold text-slate-800">
+                  <p className="text-sm font-semibold text-[var(--color-text-primary)]">
                     {item.degree}
                   </p>
-                  <p className="text-xs text-slate-500">{item.school}</p>
-                  <p className="text-xs text-slate-400">
-                    {item.startYear} — {item.endYear || "Present"}
+                  <p className="text-xs text-[var(--color-text-muted)]">{item.school}</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">
+                    {item.startYear} — {item.endYear || t("resumePreview.present")}
                   </p>
                 </article>
               ))}
@@ -109,14 +113,14 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
 
         {resume.skills.length > 0 && (
           <section className="space-y-2">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Skills
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+              {t("resumePreview.skills")}
             </h3>
             <div className="flex flex-wrap gap-2">
               {resume.skills.map((skill) => (
                 <span
                   key={skill}
-                  className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600"
+                  className="badge border border-[var(--color-primary-light)] bg-[var(--color-primary-light)] text-[var(--color-primary)]"
                 >
                   {skill}
                 </span>
@@ -130,4 +134,3 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
 );
 
 ResumePreview.displayName = "ResumePreview";
-
