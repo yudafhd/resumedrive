@@ -125,20 +125,180 @@ function ResumeEditorPageContent() {
             return;
         }
 
-        if (typeof window === "undefined") return;
+        if (typeof window === "undefined" || typeof document === "undefined") return;
 
-        const styles = `
+        const escapeHtml = (value: string) =>
+            value
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+
+        const allowedTags = new Set(["P", "BR", "STRONG", "B", "EM", "I", "UL", "OL", "LI"]);
+
+        const sanitizeRichText = (source?: string | null) => {
+            if (!source) return "";
+            const container = document.createElement("div");
+            container.innerHTML = source;
+
+            const walk = (node: Node) => {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    node.textContent = node.textContent?.replace(/\u00A0/g, " ") ?? "";
+                    return;
+                }
+
+                if (node.nodeType !== Node.ELEMENT_NODE) {
+                    node.parentNode?.removeChild(node);
+                    return;
+                }
+
+                const el = node as HTMLElement;
+                if (!allowedTags.has(el.tagName)) {
+                    const parent = el.parentNode;
+                    if (!parent) return;
+                    const children = Array.from(el.childNodes);
+                    children.forEach((child) => parent.insertBefore(child, el));
+                    parent.removeChild(el);
+                    children.forEach(walk);
+                    return;
+                }
+
+                while (el.attributes.length > 0) {
+                    el.removeAttribute(el.attributes[0].name);
+                }
+
+                Array.from(el.childNodes).forEach(walk);
+
+                if ((el.tagName === "P" || el.tagName === "LI") && !el.textContent?.trim()) {
+                    el.remove();
+                }
+
+                if ((el.tagName === "UL" || el.tagName === "OL") && el.childElementCount === 0) {
+                    el.remove();
+                }
+            };
+
+            Array.from(container.childNodes).forEach(walk);
+            return container.innerHTML.trim();
+        };
+
+        const renderRichText = (source?: string | null) => {
+            if (!source) return "";
+            const sanitized = sanitizeRichText(source);
+            if (sanitized) return sanitized;
+
+            const plainLines = source
+                .replace(/\r\n/g, "\n")
+                .split(/\n+/)
+                .map((line) => line.trim())
+                .filter(Boolean);
+
+            if (!plainLines.length) return "";
+            return plainLines
+                .map((line) => `<p class="paragraph">${escapeHtml(line)}</p>`)
+                .join("");
+        };
+
+        const contactParts: string[] = [];
+        if (resume.contact.email) contactParts.push(resume.contact.email.trim());
+        if (resume.contact.phone) contactParts.push(resume.contact.phone.trim());
+        if (resume.contact.location) contactParts.push(resume.contact.location.trim());
+        if (resume.contact.website) contactParts.push(resume.contact.website.trim());
+        const contactHtml = contactParts.length
+            ? `<p class="contact">${contactParts.map((part) => escapeHtml(part)).join(" | ")}</p>`
+            : "";
+
+        const summaryHtml = renderRichText(resume.summary);
+        const summarySection = summaryHtml
+            ? `<section class="section">
+                    <h2>${escapeHtml(t("resumePreview.summary"))}</h2>
+                    ${summaryHtml}
+                </section>`
+            : "";
+
+        const experienceSection = resume.experience.length
+            ? `<section class="section">
+                    <h2>${escapeHtml(t("resumePreview.experience"))}</h2>
+                    ${resume.experience
+                .map((item) => {
+                    const role = item.role?.trim() ? escapeHtml(item.role.trim()) : "";
+                    const company = item.company?.trim() ? escapeHtml(item.company.trim()) : "";
+                    const heading = [role, company].filter(Boolean).join(" — ");
+                    const dateStart = item.startDate?.trim();
+                    const dateEnd = item.isCurrent
+                        ? t("resumePreview.present")
+                        : item.endDate?.trim() ?? "";
+                    const dateRange = [dateStart, dateEnd].filter(Boolean).join(" - ");
+                    const descriptionHtml = renderRichText(item.description);
+                    return `<div class="item">
+                                        ${heading ? `<p class="item-heading">${heading}</p>` : ""}
+                                        ${dateRange ? `<p class="meta">${escapeHtml(dateRange)}</p>` : ""}
+                                        ${descriptionHtml}
+                                    </div>`;
+                })
+                .join("")}
+                </section>`
+            : "";
+
+        const educationSection = resume.education.length
+            ? `<section class="section">
+                    <h2>${escapeHtml(t("resumePreview.education"))}</h2>
+                    ${resume.education
+                .map((item) => {
+                    const degree = item.degree?.trim() ? escapeHtml(item.degree.trim()) : "";
+                    const school = item.school?.trim() ? escapeHtml(item.school.trim()) : "";
+                    const heading = [degree, school].filter(Boolean).join(" — ");
+                    const dateRange = [item.startYear?.trim(), item.endYear?.trim()]
+                        .filter(Boolean)
+                        .join(" - ");
+                    return `<div class="item">
+                                        ${heading ? `<p class="item-heading">${heading}</p>` : ""}
+                                        ${dateRange ? `<p class="meta">${escapeHtml(dateRange)}</p>` : ""}
+                                    </div>`;
+                })
+                .join("")}
+                </section>`
+            : "";
+
+        const skillsSection = resume.skills.length
+            ? `<section class="section">
+                    <h2>${escapeHtml(t("resumePreview.skills"))}</h2>
+                    <p class="paragraph">${escapeHtml(resume.skills.join(", "))}</p>
+                </section>`
+            : "";
+
+        const fileTitle = fileName.replace(/\.[^.]+$/, "") || "Resume";
+        const atsStyles = `
       <style>
-        body { font-family: Arial, sans-serif; margin: 40px; color: #111827; }
-        h1,h2,h3 { color: #111827; }
-        .section { margin-bottom: 24px; }
-        .tag { display: inline-block; padding: 6px 12px; border-radius: 999px; border: 1px solid #1e40af; color: #1e40af; margin: 4px 8px 0 0; font-size: 12px; font-weight: 600; }
-        .card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-        .meta { color: #374151; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+        body { font-family: "Arial", "Helvetica", sans-serif; font-size: 12pt; line-height: 1.4; color: #000; margin: 32px; }
+        h1 { font-size: 20pt; margin: 0 0 4px 0; }
+        h2 { font-size: 14pt; margin: 24px 0 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+        .subtitle { font-size: 12pt; margin: 0 0 8px 0; }
+        .contact, .meta { font-size: 10pt; margin: 0 0 6px 0; color: #000; }
+        .section { margin-bottom: 16px; }
+        .paragraph { margin: 0 0 8px 0; white-space: pre-line; }
+        .item { margin-bottom: 12px; }
+        .item-heading { font-weight: 600; margin: 0 0 4px 0; }
+        ul, ol { margin: 6px 0 0 18px; padding: 0; }
+        li { margin-bottom: 2px; }
+        strong, b { font-weight: 700; }
+        em, i { font-style: italic; }
       </style>
     `;
 
-        // Create hidden iframe to avoid popup blockers
+        const documentBody = `
+      <header>
+        ${resume.name ? `<h1>${escapeHtml(resume.name)}</h1>` : ""}
+        ${resume.title ? `<p class="subtitle">${escapeHtml(resume.title)}</p>` : ""}
+        ${contactHtml}
+      </header>
+      ${summarySection}
+      ${experienceSection}
+      ${educationSection}
+      ${skillsSection}
+    `;
+
         const iframe = document.createElement("iframe");
         iframe.style.position = "fixed";
         iframe.style.top = "0";
@@ -150,8 +310,8 @@ function ResumeEditorPageContent() {
         iframe.setAttribute("sandbox", "allow-modals allow-same-origin allow-scripts");
         document.body.appendChild(iframe);
 
-        const w = iframe.contentWindow;
-        if (!w || !w.document) {
+        const printWindow = iframe.contentWindow;
+        if (!printWindow || !printWindow.document) {
             showToast(t("page.printPreviewError"), "error");
             try {
                 document.body.removeChild(iframe);
@@ -159,18 +319,18 @@ function ResumeEditorPageContent() {
             return;
         }
 
-        const doc = w.document;
+        const doc = printWindow.document;
         doc.open();
         doc.write(
-            `<html><head><title>${fileName.replace(/\.[^.]+$/, "")}</title>${styles}</head><body>${previewRef.current.outerHTML}</body></html>`
+            `<html><head><title>${escapeHtml(fileTitle)}</title>${atsStyles}</head><body>${documentBody}</body></html>`,
         );
         doc.close();
 
         const triggerPrint = () => {
             setTimeout(() => {
                 try {
-                    w.focus();
-                    w.print();
+                    printWindow.focus();
+                    printWindow.print();
                 } catch { }
             }, 150);
         };
@@ -178,17 +338,17 @@ function ResumeEditorPageContent() {
         if (doc.readyState === "complete") {
             triggerPrint();
         } else {
-            w.addEventListener("load", triggerPrint, { once: true } as AddEventListenerOptions);
+            printWindow.addEventListener("load", triggerPrint, { once: true } as AddEventListenerOptions);
         }
 
-        w.addEventListener(
+        printWindow.addEventListener(
             "afterprint",
             () => {
                 try {
                     document.body.removeChild(iframe);
                 } catch { }
             },
-            { once: true } as AddEventListenerOptions
+            { once: true } as AddEventListenerOptions,
         );
     };
 

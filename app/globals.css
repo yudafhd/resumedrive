@@ -250,8 +250,6 @@ pre code {
 
 /* Lists */
 ul, ol {
-  margin: 0 0 var(--spacing-4) 0;
-  padding-left: var(--spacing-6);
   color: var(--color-text-secondary);
 }
 
@@ -480,6 +478,9 @@ hr {
   white-space: nowrap;
 }
 
+/* Rich Editor */
+.rich-editor p, li{ margin-bottom: var(--spacing-0)}
+article p{ margin-bottom: var(--spacing-1);}
 /* ===================== Responsive Design ===================== */
 
 /* Container for responsive layouts */

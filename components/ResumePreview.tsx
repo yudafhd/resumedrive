@@ -21,9 +21,9 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
             {resume.title || t("resumePreview.fallbackTitle")}
           </p>
           <div className="mt-3 flex flex-wrap gap-1 text-sm text-[var(--color-text-muted)]">
-            {resume.contact.location && <span>{resume.contact.location} |</span>}
-            {resume.contact.email && <span>{resume.contact.email} |</span>}
-            {resume.contact.phone && <span>{resume.contact.phone} |</span>}
+            {resume.contact.location && <span>{resume.contact.location} . </span>}
+            {resume.contact.email && <span>{resume.contact.email} . </span>}
+            {resume.contact.phone && <span>{resume.contact.phone} . </span>}
             {resume.contact.website && (
               <a
                 href={resume.contact.website}
@@ -59,7 +59,6 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
               {resume.experience.map((item, index) => (
                 <article
                   key={`${item.company}-${index}`}
-                  className="card"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
@@ -96,7 +95,6 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
               {resume.education.map((item, index) => (
                 <article
                   key={`${item.school}-${index}`}
-                  className="card"
                 >
                   <p className="text-sm font-semibold text-[var(--color-text-primary)]">
                     {item.degree}

@@ -178,7 +178,7 @@ export function RichEditor({
         />
       </div>
 
-      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] focus-within:ring-1 focus-within:ring-[var(--color-primary)]">
+      <div className="rich-editor rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] focus-within:ring-1 focus-within:ring-[var(--color-primary)]">
         <EditorContent
           editor={editor}
           onClick={focusEditor}
