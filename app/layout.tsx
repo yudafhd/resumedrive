@@ -5,6 +5,7 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 import { AppDataProvider } from "@/components/providers/AppDataProvider";
 import { LanguageProvider } from "@/components/providers/LanguageProvider";
 import SkipLink from "@/components/SkipLink";
+import Footer from "@/components/Footer";
 
 import "./globals.css";
 
@@ -66,6 +67,7 @@ export default function RootLayout({
             <AppDataProvider>
               <SkipLink />
               {children}
+              <Footer />
             </AppDataProvider>
           </AuthProvider>
         </LanguageProvider>

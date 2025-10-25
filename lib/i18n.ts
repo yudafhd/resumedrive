@@ -18,6 +18,13 @@ const translations: Record<Language, TranslationDictionary> = {
       englishShort: "EN",
       indonesianShort: "ID",
     },
+    footer: {
+      navigationLabel: "Footer navigation",
+      contact: "Contact",
+      github: "GitHub",
+      portfolio: "yudafhd.github.io",
+      copyright: "© {{year}} Resume Drive. All rights reserved.",
+    },
     header: {
       editorTab: "Editor",
       previewTab: "Preview",
@@ -178,6 +185,16 @@ const translations: Record<Language, TranslationDictionary> = {
       loadFailed: "Failed to load from Drive.",
       loadingFallback: "Loading…",
     },
+    contactPage: {
+      title: "Get in touch",
+      intro:
+        "Have feedback, feature ideas, or collaboration opportunities? I’d love to hear from you.",
+      emailLabel: "Email",
+      emailValue: "ahmadyudafahrudin@gmail.com",
+      githubLabel: "GitHub",
+      portfolioLabel: "Portfolio",
+      responseTime: "I typically reply within 1–2 business days.",
+    },
     drawer: {
       settingsTitle: "Settings",
       closeSettings: "Close settings",
@@ -193,6 +210,13 @@ const translations: Record<Language, TranslationDictionary> = {
       selectIndonesian: "Ganti ke Bahasa Indonesia",
       englishShort: "EN",
       indonesianShort: "ID",
+    },
+    footer: {
+      navigationLabel: "Navigasi bagian bawah",
+      contact: "Kontak",
+      github: "GitHub",
+      portfolio: "yudafhd.github.io",
+      copyright: "© {{year}} Resume Drive. Hak cipta dilindungi.",
     },
     header: {
       editorTab: "Editor",
@@ -353,6 +377,16 @@ const translations: Record<Language, TranslationDictionary> = {
       loadedFromDrive: "Resume berhasil dimuat dari Drive.",
       loadFailed: "Gagal memuat dari Drive.",
       loadingFallback: "Memuat…",
+    },
+    contactPage: {
+      title: "Hubungi saya",
+      intro:
+        "Punya masukan, ide fitur, atau peluang kolaborasi? Saya senang mendengarnya.",
+      emailLabel: "Email",
+      emailValue: "ahmadyudafahrudin@gmail.com",
+      githubLabel: "GitHub",
+      portfolioLabel: "Portofolio",
+      responseTime: "Biasanya saya membalas dalam 1–2 hari kerja.",
     },
     drawer: {
       settingsTitle: "Pengaturan",

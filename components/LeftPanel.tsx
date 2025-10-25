@@ -60,7 +60,7 @@ export function LeftPanel({ isAuthenticated, onSelectFile, loading: isSaving, on
     };
 
     return (
-        <aside className="space-y-6">
+        <aside className="space-y-6 mb-30">
             <div className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] px-1 py-1 text-[var(--color-text-primary)] md:hidden">
                 <LanguageToggle />
             </div>
