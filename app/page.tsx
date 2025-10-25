@@ -32,6 +32,7 @@ import { createSettingsPayload } from "@/lib/app-settings";
 import type { AppSettings } from "@/lib/app-settings";
 import { useAppData } from "@/components/providers/AppDataProvider";
 import { useTranslation } from "@/components/providers/LanguageProvider";
+import Link from "next/link";
 
 type ToastType = ToastMessage["variant"];
 type TabId = "editor" | "preview" | "config";
@@ -586,7 +587,19 @@ function ResumeEditorPageContent() {
                     onClick={() => setLeftPanelOpen(false)}
                 />
                 <div className={`absolute inset-y-0 left-0 max-w-[90vw] bg-[var(--color-bg-secondary)] border-r border-[var(--color-border)] shadow-xl transition-transform duration-300 ease-in-out ${leftPanelOpen ? "translate-x-0" : "-translate-x-full"}`}>
-                    <div className="flex h-14 items-center justify-end border-b border-[var(--color-border)] px-3">
+
+                    <div className="flex h-14 items-center justify-between border-b border-[var(--color-border)] px-3">
+                        <div className="flex gap-2">
+                            <Link
+                                href="/"
+                                aria-label="Resume Drive home"
+                                className="flex items-center gap-3 rounded-[var(--radius-md)] px-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-[var(--focus-ring-offset)] transition-all"
+                            >
+                                <span className="text-base font-extrabold tracking-wider">
+                                    RESUME DRIVE
+                                </span>
+                            </Link>
+                        </div>
                         <button
                             type="button"
                             aria-label="Close left panel"

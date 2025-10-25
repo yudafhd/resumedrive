@@ -1,10 +1,13 @@
 "use client";
 
 import { ChangeEvent, useRef } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 import { QuickStartChecklist } from "./QuickStartChecklist";
 import { useAuth } from "./providers/AuthProvider";
 import { FileList } from "./FileList";
+import LanguageToggle from "./LanguageToggle";
 import type { DriveFile } from "@/lib/drive-server";
 import { useAppData } from "@/components/providers/AppDataProvider";
 import { useTranslation } from "./providers/LanguageProvider";
@@ -60,6 +63,9 @@ export function LeftPanel({ isAuthenticated, onSelectFile, loading: isSaving, on
 
     return (
         <aside className="space-y-6">
+            <div className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] px-1 py-1 text-[var(--color-text-primary)] md:hidden">
+                <LanguageToggle />
+            </div>
             <section className="card space-y-4">
                 <header className="space-y-1">
                     <span className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-text-muted)]">{t("leftPanel.workspaceLabel")}</span>
@@ -99,8 +105,8 @@ export function LeftPanel({ isAuthenticated, onSelectFile, loading: isSaving, on
 
             {!isAuthenticated ? (
                 <div className="space-y-4">
-                    <QuickStartChecklist className="space-y-3 text-[var(--color-text-primary)]" />
                     <GoogleSignInButton />
+                    <QuickStartChecklist className="space-y-3 text-[var(--color-text-primary)]" />
                 </div>
             ) : (
                 <div className="space-y-4">
