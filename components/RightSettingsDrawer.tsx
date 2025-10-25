@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { useTranslation } from "./providers/LanguageProvider";
 
 type RightSettingsDrawerProps = {
@@ -11,6 +11,36 @@ type RightSettingsDrawerProps = {
 
 export function RightSettingsDrawer({ open, onClose, children }: RightSettingsDrawerProps) {
     const { t } = useTranslation();
+
+    // Lock body scroll when the drawer is open
+    useEffect(() => {
+        if (!open) return;
+
+        const { style } = document.body;
+        const scrollY = window.scrollY;
+        const prevPosition = style.position;
+        const prevTop = style.top;
+        const prevWidth = style.width;
+        const prevPaddingRight = style.paddingRight;
+
+        // Compensate for scrollbar to avoid layout shift
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+        style.position = "fixed";
+        style.top = `-${scrollY}px`;
+        style.width = "100%";
+        if (scrollbarWidth > 0) {
+            style.paddingRight = `${scrollbarWidth}px`;
+        }
+
+        return () => {
+            style.position = prevPosition;
+            style.top = prevTop;
+            style.width = prevWidth;
+            style.paddingRight = prevPaddingRight;
+            window.scrollTo(0, scrollY);
+        };
+    }, [open]);
     return (
         <>
             {/* Backdrop */}

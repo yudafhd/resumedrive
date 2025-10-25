@@ -2,6 +2,7 @@
 
 import { forwardRef } from "react";
 import { type CvData as ResumeData } from "@/lib/cv";
+import { formatDisplayDate } from "@/lib/date";
 import { useTranslation } from "./providers/LanguageProvider";
 
 type ResumePreviewProps = {
@@ -10,7 +11,8 @@ type ResumePreviewProps = {
 
 export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
   ({ resume }, ref) => {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
+    const customSections = resume.customSections ?? [];
     return (
       <div ref={ref} className="space-y-6">
         <header className="border-b border-[var(--color-border)] pb-4">
@@ -67,12 +69,16 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
                       </p>
                       <p className="text-xs text-[var(--color-text-muted)]">{item.company}</p>
                     </div>
-                    <p className="text-xs text-[var(--color-text-muted)]">
-                      {item.startDate} —{" "}
-                      {item.isCurrent
+                    {(() => {
+                      const start = formatDisplayDate(item.startDate, language);
+                      const end = item.isCurrent
                         ? t("resumePreview.present")
-                        : item.endDate || t("resumePreview.present")}
-                    </p>
+                        : formatDisplayDate(item.endDate, language);
+                      const range = [start, end].filter(Boolean).join(" — ");
+                      return range ? (
+                        <p className="text-xs text-[var(--color-text-muted)]">{range}</p>
+                      ) : null;
+                    })()}
                   </div>
                   {item.description && (
                     <div
@@ -100,9 +106,14 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
                     {item.degree}
                   </p>
                   <p className="text-xs text-[var(--color-text-muted)]">{item.school}</p>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    {item.startYear} — {item.endYear || t("resumePreview.present")}
-                  </p>
+                  {(() => {
+                    const start = formatDisplayDate(item.startYear, language);
+                    const endValue = formatDisplayDate(item.endYear, language) || t("resumePreview.present");
+                    const range = [start, endValue].filter(Boolean).join(" — ");
+                    return range ? (
+                      <p className="text-xs text-[var(--color-text-muted)]">{range}</p>
+                    ) : null;
+                  })()}
                 </article>
               ))}
             </div>
@@ -118,7 +129,7 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
               {resume.skills.map((skill) => (
                 <span
                   key={skill}
-                  className="badge border border-[var(--color-primary-light)] bg-[var(--color-primary-light)] text-[var(--color-primary)]"
+                  className="badge border border-[var(--color-primary-light)] text-[var(--color-primary)]"
                 >
                   {skill}
                 </span>
@@ -126,6 +137,43 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
             </div>
           </section>
         )}
+
+        {customSections.length > 0 &&
+          customSections.map((section, sectionIndex) => {
+            if (!section) return null;
+            const sectionHeading =
+              section.heading?.trim() || `${t("resumePreview.additional")} ${sectionIndex + 1}`;
+            if (!sectionHeading && section.entries.length === 0) return null;
+            return (
+              <section key={`custom-section-${sectionIndex}`} className="space-y-3">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+                  {sectionHeading}
+                </h3>
+                <div className="space-y-4">
+                  {section.entries.map((entry, entryIndex) => {
+                    const hasDescription = Boolean(entry.description);
+                    const hasTitle = Boolean(entry.title);
+                    if (!hasDescription && !hasTitle) return null;
+                    return (
+                      <article key={`custom-entry-${sectionIndex}-${entryIndex}`} className="space-y-1">
+                        {hasTitle ? (
+                          <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                            {entry.title}
+                          </p>
+                        ) : null}
+                        {hasDescription ? (
+                          <div
+                            className="text-sm leading-relaxed text-[var(--color-text-secondary)]"
+                            dangerouslySetInnerHTML={{ __html: entry.description ?? "" }}
+                          />
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
       </div>
     );
   },

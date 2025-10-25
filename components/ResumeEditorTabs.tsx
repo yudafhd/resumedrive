@@ -19,7 +19,7 @@ export function EditorTab({
   const { t } = useTranslation();
 
   return (
-    <section className="card space-y-6">
+    <section className="card space-y-6 !p-4 md:!p-6">
       <header className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
@@ -37,14 +37,16 @@ export function EditorTab({
 
 type PreviewTabProps = {
   resume: ResumeData;
-  onDownloadPdf: () => void;
+  onDownloadPdf: () => void | Promise<void>;
   previewRef: RefObject<HTMLDivElement | null>;
+  isExporting: boolean;
 };
 
 export function PreviewTab({
   resume,
   onDownloadPdf,
   previewRef,
+  isExporting,
 }: PreviewTabProps) {
   const { t } = useTranslation();
 
@@ -62,9 +64,11 @@ export function PreviewTab({
         <button
           type="button"
           onClick={onDownloadPdf}
-          className="btn bg-[var(--color-primary)] border-transparent text-[var(--color-text-inverse)] hover:bg-[var(--color-primary-hover)]"
+          disabled={isExporting}
+          aria-busy={isExporting}
+          className="btn bg-[var(--color-primary)] border-transparent text-[var(--color-text-inverse)] hover:bg-[var(--color-primary-hover)] disabled:opacity-60"
         >
-          {t("resumeTabs.exportPdf")}
+          {isExporting ? `${t("resumeTabs.exportPdf")}…` : t("resumeTabs.exportPdf")}
         </button>
       </header>
       <ResumePreview ref={previewRef} resume={resume} />

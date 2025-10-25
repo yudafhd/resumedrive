@@ -19,6 +19,16 @@ export type Education = {
   endYear?: string;
 };
 
+export type CustomSectionEntry = {
+  title: string;
+  description?: string;
+};
+
+export type CustomSection = {
+  heading: string;
+  entries: CustomSectionEntry[];
+};
+
 export type Contact = {
   email: string; // previously z.string().email(...)
   phone?: string;
@@ -34,6 +44,7 @@ export type CvData = {
   experience: Experience[];
   education: Education[];
   skills: string[];
+  customSections: CustomSection[];
 };
 
 /**
@@ -52,6 +63,7 @@ export const defaultCv: CvData = {
   experience: [],
   education: [],
   skills: [],
+  customSections: [],
 };
 
 /**
@@ -98,6 +110,24 @@ function isEducation(u: unknown): u is Education {
   return true;
 }
 
+function isCustomSectionEntry(u: unknown): u is CustomSectionEntry {
+  if (typeof u !== "object" || u === null) return false;
+  const entry = u as Record<string, unknown>;
+  if (!isString(entry.title)) return false;
+  if (entry.description !== undefined && !isString(entry.description)) return false;
+  return true;
+}
+
+function isCustomSection(u: unknown): u is CustomSection {
+  if (typeof u !== "object" || u === null) return false;
+  const section = u as Record<string, unknown>;
+  if (!isString(section.heading)) return false;
+  if (!Array.isArray(section.entries) || !section.entries.every(isCustomSectionEntry)) {
+    return false;
+  }
+  return true;
+}
+
 function isContact(u: unknown): u is Contact {
   if (typeof u !== "object" || u === null) return false;
   const c = u as Record<string, unknown>;
@@ -130,6 +160,11 @@ function isCvData(u: unknown): u is CvData {
   if (v.experience !== undefined && !isExperienceArray(v.experience)) return false;
   if (v.education !== undefined && !isEducationArray(v.education)) return false;
   if (v.skills !== undefined && !isStringArray(v.skills)) return false;
+  if (v.customSections !== undefined) {
+    if (!Array.isArray(v.customSections) || !v.customSections.every(isCustomSection)) {
+      return false;
+    }
+  }
 
   return true;
 }
@@ -161,6 +196,22 @@ function normalizeCv(input: CvData): CvData {
     location: isString(input.contact?.location) ? input.contact.location : undefined,
   };
 
+  const customSections: CustomSection[] = Array.isArray(input.customSections)
+    ? input.customSections
+        .filter(isCustomSection)
+        .map((section) => ({
+          heading: section.heading ?? "",
+          entries: Array.isArray(section.entries)
+            ? section.entries
+                .filter(isCustomSectionEntry)
+                .map((entry) => ({
+                  title: entry.title ?? "",
+                  description: isString(entry.description) ? entry.description : "",
+                }))
+            : [],
+        }))
+    : [];
+
   return {
     name: input.name ?? "",
     title: isString(input.title) ? input.title : "",
@@ -169,6 +220,7 @@ function normalizeCv(input: CvData): CvData {
     experience: exp,
     education: edu,
     skills: Array.isArray(input.skills) ? input.skills.filter((s): s is string => typeof s === "string") : [],
+    customSections,
   };
 }
 

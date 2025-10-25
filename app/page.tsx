@@ -1,5 +1,4 @@
 "use client";
-
 import { useSearchParams } from "next/navigation";
 import {
     ChangeEvent,
@@ -27,6 +26,7 @@ import {
 } from "@/lib/storage";
 import HeaderBar from "@/components/HeaderBar";
 import LeftPanel from "@/components/LeftPanel";
+import ResumePdfDocument from "@/components/pdf/ResumePdfDocument";
 import { fetchAppSettings, saveAppSettings } from "@/lib/settings-client";
 import { createSettingsPayload } from "@/lib/app-settings";
 import type { AppSettings } from "@/lib/app-settings";
@@ -41,7 +41,7 @@ function ResumeEditorPageContent() {
     const searchParams = useSearchParams();
     const { accessToken, isAuthenticated } = useAuth();
     const { upload: uploadAppData } = useAppData();
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 
     const initialFileId = searchParams.get("fileId");
     const requestedMime = searchParams.get("mimeType") ?? undefined;
@@ -57,6 +57,7 @@ function ResumeEditorPageContent() {
     );
     const [toast, setToast] = useState<ToastMessage | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [isExportingPdf, setIsExportingPdf] = useState(false);
     const toastIdRef = useRef(0);
     const [activeTab, setActiveTab] = useState<TabId>("editor");
     const previewRef = useRef<HTMLDivElement | null>(null);
@@ -121,236 +122,53 @@ function ResumeEditorPageContent() {
     );
 
     const handleDownloadPdf = () => {
-        if (!previewRef.current) {
-            showToast(t("page.previewRequired"), "error");
-            return;
-        }
+        if (typeof window === "undefined" || isExportingPdf) return;
 
-        if (typeof window === "undefined" || typeof document === "undefined") return;
-
-        const escapeHtml = (value: string) =>
-            value
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#39;");
-
-        const allowedTags = new Set(["P", "BR", "STRONG", "B", "EM", "I", "UL", "OL", "LI"]);
-
-        const sanitizeRichText = (source?: string | null) => {
-            if (!source) return "";
-            const container = document.createElement("div");
-            container.innerHTML = source;
-
-            const walk = (node: Node) => {
-                if (node.nodeType === Node.TEXT_NODE) {
-                    node.textContent = node.textContent?.replace(/\u00A0/g, " ") ?? "";
-                    return;
-                }
-
-                if (node.nodeType !== Node.ELEMENT_NODE) {
-                    node.parentNode?.removeChild(node);
-                    return;
-                }
-
-                const el = node as HTMLElement;
-                if (!allowedTags.has(el.tagName)) {
-                    const parent = el.parentNode;
-                    if (!parent) return;
-                    const children = Array.from(el.childNodes);
-                    children.forEach((child) => parent.insertBefore(child, el));
-                    parent.removeChild(el);
-                    children.forEach(walk);
-                    return;
-                }
-
-                while (el.attributes.length > 0) {
-                    el.removeAttribute(el.attributes[0].name);
-                }
-
-                Array.from(el.childNodes).forEach(walk);
-
-                if ((el.tagName === "P" || el.tagName === "LI") && !el.textContent?.trim()) {
-                    el.remove();
-                }
-
-                if ((el.tagName === "UL" || el.tagName === "OL") && el.childElementCount === 0) {
-                    el.remove();
-                }
-            };
-
-            Array.from(container.childNodes).forEach(walk);
-            return container.innerHTML.trim();
+        const labels = {
+            summary: t("resumePreview.summary"),
+            experience: t("resumePreview.experience"),
+            education: t("resumePreview.education"),
+            skills: t("resumePreview.skills"),
+            present: t("resumePreview.present"),
+            fallbackName: t("resumePreview.fallbackName"),
+            fallbackTitle: t("resumePreview.fallbackTitle"),
+            additional: t("resumePreview.additional"),
         };
 
-        const renderRichText = (source?: string | null) => {
-            if (!source) return "";
-            const sanitized = sanitizeRichText(source);
-            if (sanitized) return sanitized;
+        const pdfFileName = (() => {
+            const trimmed = fileName.trim();
+            if (!trimmed) return "Resume.pdf";
+            return ensureExtension(trimmed, ".pdf");
+        })();
 
-            const plainLines = source
-                .replace(/\r\n/g, "\n")
-                .split(/\n+/)
-                .map((line) => line.trim())
-                .filter(Boolean);
+        setIsExportingPdf(true);
 
-            if (!plainLines.length) return "";
-            return plainLines
-                .map((line) => `<p class="paragraph">${escapeHtml(line)}</p>`)
-                .join("");
-        };
-
-        const contactParts: string[] = [];
-        if (resume.contact.email) contactParts.push(resume.contact.email.trim());
-        if (resume.contact.phone) contactParts.push(resume.contact.phone.trim());
-        if (resume.contact.location) contactParts.push(resume.contact.location.trim());
-        if (resume.contact.website) contactParts.push(resume.contact.website.trim());
-        const contactHtml = contactParts.length
-            ? `<p class="contact">${contactParts.map((part) => escapeHtml(part)).join(" | ")}</p>`
-            : "";
-
-        const summaryHtml = renderRichText(resume.summary);
-        const summarySection = summaryHtml
-            ? `<section class="section">
-                    <h2>${escapeHtml(t("resumePreview.summary"))}</h2>
-                    ${summaryHtml}
-                </section>`
-            : "";
-
-        const experienceSection = resume.experience.length
-            ? `<section class="section">
-                    <h2>${escapeHtml(t("resumePreview.experience"))}</h2>
-                    ${resume.experience
-                .map((item) => {
-                    const role = item.role?.trim() ? escapeHtml(item.role.trim()) : "";
-                    const company = item.company?.trim() ? escapeHtml(item.company.trim()) : "";
-                    const heading = [role, company].filter(Boolean).join(" — ");
-                    const dateStart = item.startDate?.trim();
-                    const dateEnd = item.isCurrent
-                        ? t("resumePreview.present")
-                        : item.endDate?.trim() ?? "";
-                    const dateRange = [dateStart, dateEnd].filter(Boolean).join(" - ");
-                    const descriptionHtml = renderRichText(item.description);
-                    return `<div class="item">
-                                        ${heading ? `<p class="item-heading">${heading}</p>` : ""}
-                                        ${dateRange ? `<p class="meta">${escapeHtml(dateRange)}</p>` : ""}
-                                        ${descriptionHtml}
-                                    </div>`;
-                })
-                .join("")}
-                </section>`
-            : "";
-
-        const educationSection = resume.education.length
-            ? `<section class="section">
-                    <h2>${escapeHtml(t("resumePreview.education"))}</h2>
-                    ${resume.education
-                .map((item) => {
-                    const degree = item.degree?.trim() ? escapeHtml(item.degree.trim()) : "";
-                    const school = item.school?.trim() ? escapeHtml(item.school.trim()) : "";
-                    const heading = [degree, school].filter(Boolean).join(" — ");
-                    const dateRange = [item.startYear?.trim(), item.endYear?.trim()]
-                        .filter(Boolean)
-                        .join(" - ");
-                    return `<div class="item">
-                                        ${heading ? `<p class="item-heading">${heading}</p>` : ""}
-                                        ${dateRange ? `<p class="meta">${escapeHtml(dateRange)}</p>` : ""}
-                                    </div>`;
-                })
-                .join("")}
-                </section>`
-            : "";
-
-        const skillsSection = resume.skills.length
-            ? `<section class="section">
-                    <h2>${escapeHtml(t("resumePreview.skills"))}</h2>
-                    <p class="paragraph">${escapeHtml(resume.skills.join(", "))}</p>
-                </section>`
-            : "";
-
-        const fileTitle = fileName.replace(/\.[^.]+$/, "") || "Resume";
-        const atsStyles = `
-      <style>
-        body { font-family: "Arial", "Helvetica", sans-serif; font-size: 12pt; line-height: 1.4; color: #000; margin: 32px; }
-        h1 { font-size: 20pt; margin: 0 0 4px 0; }
-        h2 { font-size: 14pt; margin: 24px 0 8px; text-transform: uppercase; letter-spacing: 0.08em; }
-        .subtitle { font-size: 12pt; margin: 0 0 8px 0; }
-        .contact, .meta { font-size: 10pt; margin: 0 0 6px 0; color: #000; }
-        .section { margin-bottom: 16px; }
-        .paragraph { margin: 0 0 8px 0; white-space: pre-line; }
-        .item { margin-bottom: 12px; }
-        .item-heading { font-weight: 600; margin: 0 0 4px 0; }
-        ul, ol { margin: 6px 0 0 18px; padding: 0; }
-        li { margin-bottom: 2px; }
-        strong, b { font-weight: 700; }
-        em, i { font-style: italic; }
-      </style>
-    `;
-
-        const documentBody = `
-      <header>
-        ${resume.name ? `<h1>${escapeHtml(resume.name)}</h1>` : ""}
-        ${resume.title ? `<p class="subtitle">${escapeHtml(resume.title)}</p>` : ""}
-        ${contactHtml}
-      </header>
-      ${summarySection}
-      ${experienceSection}
-      ${educationSection}
-      ${skillsSection}
-    `;
-
-        const iframe = document.createElement("iframe");
-        iframe.style.position = "fixed";
-        iframe.style.top = "0";
-        iframe.style.left = "0";
-        iframe.style.width = "0";
-        iframe.style.height = "0";
-        iframe.style.border = "0";
-        iframe.style.visibility = "hidden";
-        iframe.setAttribute("sandbox", "allow-modals allow-same-origin allow-scripts");
-        document.body.appendChild(iframe);
-
-        const printWindow = iframe.contentWindow;
-        if (!printWindow || !printWindow.document) {
-            showToast(t("page.printPreviewError"), "error");
+        window.setTimeout(async () => {
             try {
-                document.body.removeChild(iframe);
-            } catch { }
-            return;
-        }
+                const { pdf } = await import("@react-pdf/renderer");
+                const blob = await pdf(
+                    <ResumePdfDocument
+                        resume={resume}
+                        labels={labels}
+                        language={language}
+                    />,
+                ).toBlob();
 
-        const doc = printWindow.document;
-        doc.open();
-        doc.write(
-            `<html><head><title>${escapeHtml(fileTitle)}</title>${atsStyles}</head><body>${documentBody}</body></html>`,
-        );
-        doc.close();
-
-        const triggerPrint = () => {
-            setTimeout(() => {
-                try {
-                    printWindow.focus();
-                    printWindow.print();
-                } catch { }
-            }, 150);
-        };
-
-        if (doc.readyState === "complete") {
-            triggerPrint();
-        } else {
-            printWindow.addEventListener("load", triggerPrint, { once: true } as AddEventListenerOptions);
-        }
-
-        printWindow.addEventListener(
-            "afterprint",
-            () => {
-                try {
-                    document.body.removeChild(iframe);
-                } catch { }
-            },
-            { once: true } as AddEventListenerOptions,
-        );
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = pdfFileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error("Failed to generate PDF", error);
+                showToast(t("page.printPreviewError"), "error");
+            } finally {
+                setIsExportingPdf(false);
+            }
+        }, 0);
     };
 
     const fileKey = ["file:current", accessToken ?? "", currentFileId ?? ""];
@@ -574,6 +392,7 @@ function ResumeEditorPageContent() {
                             resume={resume}
                             onDownloadPdf={handleDownloadPdf}
                             previewRef={previewRef}
+                            isExporting={isExportingPdf}
                         />
                     </div>}
                 </div>
@@ -650,17 +469,23 @@ export default function ResumeEditorPage() {
     );
 }
 
-function ensureExtension(name: string, extension: ".json" = ".json") {
+function ensureExtension(name: string, extension: string = ".json") {
     const trimmed = name.trim();
-    if (trimmed.toLowerCase().endsWith(extension)) {
+    const normalizedExtension = extension.startsWith(".")
+        ? extension
+        : `.${extension}`;
+    if (trimmed.toLowerCase().endsWith(normalizedExtension.toLowerCase())) {
         return trimmed;
     }
-    return replaceExtension(trimmed, extension);
+    return replaceExtension(trimmed, normalizedExtension);
 }
 
-function replaceExtension(name: string, extension: ".json" = ".json") {
-    const base = name.replace(/\.(json|xlsx)$/i, "");
-    return `${base}${extension}`;
+function replaceExtension(name: string, extension: string = ".json") {
+    const normalizedExtension = extension.startsWith(".")
+        ? extension
+        : `.${extension}`;
+    const base = name.replace(/\.[^.]+$/i, "");
+    return `${base}${normalizedExtension}`;
 }
 
 function deriveFileName(mimeType: string) {

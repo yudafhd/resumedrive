@@ -1,8 +1,6 @@
 "use client";
 
 import { ChangeEvent, useRef } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 import { QuickStartChecklist } from "./QuickStartChecklist";
 import { useAuth } from "./providers/AuthProvider";
