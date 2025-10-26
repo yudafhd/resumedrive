@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, Poppins } from "next/font/google";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next"
+import SkipLink from "@/components/SkipLink";
+import Footer from "@/components/Footer";
+
+import { Geist, Geist_Mono, Inter, Poppins } from "next/font/google";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { AppDataProvider } from "@/components/providers/AppDataProvider";
 import { LanguageProvider } from "@/components/providers/LanguageProvider";
-import SkipLink from "@/components/SkipLink";
-import Footer from "@/components/Footer";
 
 import "./globals.css";
 
@@ -71,6 +73,7 @@ export default function RootLayout({
             </AppDataProvider>
           </AuthProvider>
         </LanguageProvider>
+        <Analytics />
       </body>
     </html>
   );
