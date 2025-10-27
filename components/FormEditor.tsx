@@ -419,80 +419,95 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
           </p>
         ) : (
           <div className="space-y-6">
-            {value.education.map((item, index) => (
-              <div
-                key={`${item.school}-${index}`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <h3 className="text-sm font-semibold text-[var(--color-text-secondary)]">
-                    {t("formEditor.education")} {index + 1}
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => removeEducation(index)}
-                    className="text-xs font-semibold text-[var(--color-error)] hover:text-[var(--color-accent-red)] transition-colors"
-                  >
-                    {t("formEditor.removeEducation")}
-                  </button>
+            {value.education.map((item, index) => {
+              const eduStartInputValue = normalizeDateForInput(item.startYear);
+              const eduEndInputValue = normalizeDateForInput(item.endYear);
+              const eduStartTitle =
+                item.startYear && eduStartInputValue !== item.startYear
+                  ? item.startYear
+                  : undefined;
+              const eduEndTitle =
+                item?.endYear && eduEndInputValue !== item.endYear
+                  ? item.endYear
+                  : undefined;
+
+              return (
+                <div
+                  key={`${item.school}-${index}`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <h3 className="text-sm font-semibold text-[var(--color-text-secondary)]">
+                      {t("formEditor.education")} {index + 1}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => removeEducation(index)}
+                      className="text-xs font-semibold text-[var(--color-error)] hover:text-[var(--color-accent-red)] transition-colors"
+                    >
+                      {t("formEditor.removeEducation")}
+                    </button>
+                  </div>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+                        {t("formEditor.school")}
+                      </label>
+                      <input
+                        type="text"
+                        value={item.school}
+                        onChange={(event) =>
+                          updateEducation(index, { school: event.target.value })
+                        }
+                        className="input"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+                        {t("formEditor.degree")}
+                      </label>
+                      <input
+                        type="text"
+                        value={item.degree}
+                        onChange={(event) =>
+                          updateEducation(index, { degree: event.target.value })
+                        }
+                        className="input"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+                        {t("formEditor.startYear")}
+                      </label>
+                      <input
+                        type="date"
+                        value={eduStartInputValue}
+                        title={eduStartTitle}
+                        onChange={(event) =>
+                          updateEducation(index, { startYear: event.target.value })
+                        }
+                        className="input"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+                        {t("formEditor.endYear")}
+                      </label>
+                      <input
+                        type="date"
+                        value={eduEndInputValue}
+                        title={eduEndTitle}
+                        onChange={(event) =>
+                          updateEducation(index, { endYear: event.target.value })
+                        }
+                        className="input"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
-                      {t("formEditor.school")}
-                    </label>
-                    <input
-                      type="text"
-                      value={item.school}
-                      onChange={(event) =>
-                        updateEducation(index, { school: event.target.value })
-                      }
-                      className="input"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
-                      {t("formEditor.degree")}
-                    </label>
-                    <input
-                      type="text"
-                      value={item.degree}
-                      onChange={(event) =>
-                        updateEducation(index, { degree: event.target.value })
-                      }
-                      className="input"
-                    />
-                  </div>
-                </div>
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
-                      {t("formEditor.startYear")}
-                    </label>
-                    <input
-                      type="text"
-                      value={item.startYear}
-                      onChange={(event) =>
-                        updateEducation(index, { startYear: event.target.value })
-                      }
-                      className="input"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
-                      {t("formEditor.endYear")}
-                    </label>
-                    <input
-                      type="text"
-                      value={item.endYear ?? ""}
-                      onChange={(event) =>
-                        updateEducation(index, { endYear: event.target.value })
-                      }
-                      className="input"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
