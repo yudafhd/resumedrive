@@ -58,6 +58,7 @@ function ResumeEditorPageContent() {
     const [toast, setToast] = useState<ToastMessage | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isExportingPdf, setIsExportingPdf] = useState(false);
+    const [uiLockCount, setUiLockCount] = useState(0);
     const toastIdRef = useRef(0);
     const [activeTab, setActiveTab] = useState<TabId>("editor");
     const previewRef = useRef<HTMLDivElement | null>(null);
@@ -230,89 +231,103 @@ function ResumeEditorPageContent() {
         saveDraft(resume);
     }, [resume]);
 
+    const runWithUiLock = useCallback(async (operation: () => Promise<void> | void) => {
+        setUiLockCount((count) => count + 1);
+        try {
+            await operation();
+        } finally {
+            setUiLockCount((count) => Math.max(0, count - 1));
+        }
+    }, []);
+
     const handleSaveJson = async () => {
         if (!accessToken) {
             showToast(t("page.signInToSave"), "error");
             return;
         }
 
-        setIsSaving(true);
-        try {
-            const name = ensureExtension(fileName, ".json");
-            const result = await uploadAppData({
-                name,
-                mimeType: MIME_JSON,
-                data: JSON.stringify(resume, null, 2),
-                fileId: currentMime === MIME_JSON ? currentFileId ?? undefined : undefined,
-            });
-            setCurrentFileId(result.id ?? null);
-            setCurrentMime(MIME_JSON);
-            setFileName(result.name ?? "");
+        await runWithUiLock(async () => {
+            setIsSaving(true);
             try {
-                await persistSettings({
-                    recentResumeId: result.id ?? null,
+                const name = ensureExtension(fileName, ".json");
+                const result = await uploadAppData({
+                    name,
+                    mimeType: MIME_JSON,
+                    data: JSON.stringify(resume, null, 2),
+                    fileId: currentMime === MIME_JSON ? currentFileId ?? undefined : undefined,
                 });
-            } catch (settingsError) {
+                setCurrentFileId(result.id ?? null);
+                setCurrentMime(MIME_JSON);
+                setFileName(result.name ?? "");
+                try {
+                    await persistSettings({
+                        recentResumeId: result.id ?? null,
+                    });
+                } catch (settingsError) {
+                    showToast(
+                        settingsError instanceof Error
+                            ? t("page.saveSettingsFailed", { message: `: ${settingsError.message}` })
+                            : t("page.saveSettingsFailed", { message: "" }),
+                        "error",
+                    );
+                }
+                cache.invalidate(["file:current", accessToken ?? "", currentFileId ?? ""]);
                 showToast(
-                    settingsError instanceof Error
-                        ? t("page.saveSettingsFailed", { message: `: ${settingsError.message}` })
-                        : t("page.saveSettingsFailed", { message: "" }),
+                    t("page.savedToDrive", { name: result.name ?? name }),
+                    "success",
+                );
+                clearDraft();
+            } catch (error) {
+                showToast(
+                    error instanceof Error ? error.message : t("page.saveJsonFailed"),
                     "error",
                 );
+            } finally {
+                setIsSaving(false);
             }
-            cache.invalidate(["file:current", accessToken ?? "", currentFileId ?? ""]);
-            showToast(
-                t("page.savedToDrive", { name: result.name ?? name }),
-                "success",
-            );
-            clearDraft();
-        } catch (error) {
-            showToast(
-                error instanceof Error ? error.message : t("page.saveJsonFailed"),
-                "error",
-            );
-        } finally {
-            setIsSaving(false);
-        }
+        });
     };
 
 
 
     const handleImportJson = async (event: ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
+        const input = event.target;
+        const file = input.files?.[0];
         if (!file) return;
 
-        try {
-            const text = await file.text();
-            setResume(JSON.parse(text));
-            setCurrentMime(MIME_JSON);
-            setFileName(ensureExtension(file.name, ".json"));
-            setCurrentFileId(null);
-            if (accessToken) {
-                try {
-                    await persistSettings({ recentResumeId: null });
-                } catch (settingsError) {
+        await runWithUiLock(async () => {
+            try {
+                const text = await file.text();
+                setResume(JSON.parse(text));
+                setCurrentMime(MIME_JSON);
+                setFileName(ensureExtension(file.name, ".json"));
+                setCurrentFileId(null);
+                if (accessToken) {
+                    try {
+                        await persistSettings({ recentResumeId: null });
+                    } catch (settingsError) {
+                        showToast(
+                            settingsError instanceof Error
+                                ? t("page.importedSettingsFailed", { message: `: ${settingsError.message}` })
+                                : t("page.importedSettingsFailed", { message: "" }),
+                            "error",
+                        );
+                    }
+                }
+                showToast(t("page.importedFile", { name: file.name }), "success");
+            } catch (error) {
+                if (error instanceof SyntaxError) {
+                    showToast(t("page.invalidJson"), "error");
+                } else {
                     showToast(
-                        settingsError instanceof Error
-                            ? t("page.importedSettingsFailed", { message: `: ${settingsError.message}` })
-                            : t("page.importedSettingsFailed", { message: "" }),
+                        error instanceof Error ? error.message : t("page.importFailed"),
                         "error",
                     );
                 }
+            } finally {
+                input.value = "";
             }
-            showToast(t("page.importedFile", { name: file.name }), "success");
-        } catch (error) {
-            if (error instanceof SyntaxError) {
-                showToast(t("page.invalidJson"), "error");
-            } else {
-                showToast(
-                    error instanceof Error ? error.message : t("page.importFailed"),
-                    "error",
-                );
-            }
-        } finally {
-            event.target.value = "";
-        }
+        });
     };
 
     const handleSelectDriveFile = async (fileId: string) => {
@@ -320,35 +335,37 @@ function ResumeEditorPageContent() {
             showToast(t("page.signInToLoad"), "error");
             return;
         }
-        try {
-            if (fileId !== currentFileId) {
-                setCurrentFileId(fileId);
-            }
+        await runWithUiLock(async () => {
             try {
-                await persistSettings({
-                    recentResumeId: fileId,
-                });
-            } catch (settingsError) {
+                if (fileId !== currentFileId) {
+                    setCurrentFileId(fileId);
+                }
+                try {
+                    await persistSettings({
+                        recentResumeId: fileId,
+                    });
+                } catch (settingsError) {
+                    showToast(
+                        settingsError instanceof Error
+                            ? t("page.loadedSettingsFailed", { message: `: ${settingsError.message}` })
+                            : t("page.loadedSettingsFailed", { message: "" }),
+                        "error",
+                    );
+                }
+
+                await fileQuery.refetch();
+                if (fileQuery.error) {
+                    throw fileQuery.error as Error;
+                }
+
+                showToast(t("page.loadedFromDrive"), "success");
+            } catch (error) {
                 showToast(
-                    settingsError instanceof Error
-                        ? t("page.loadedSettingsFailed", { message: `: ${settingsError.message}` })
-                        : t("page.loadedSettingsFailed", { message: "" }),
+                    error instanceof Error ? error.message : t("page.loadFailed"),
                     "error",
                 );
             }
-
-            await fileQuery.refetch();
-            if (fileQuery.error) {
-                throw fileQuery.error as Error;
-            }
-
-            showToast(t("page.loadedFromDrive"), "success");
-        } catch (error) {
-            showToast(
-                error instanceof Error ? error.message : t("page.loadFailed"),
-                "error",
-            );
-        }
+        });
     };
 
     const downloadJson = () => {
@@ -363,14 +380,21 @@ function ResumeEditorPageContent() {
         URL.revokeObjectURL(url);
     };
 
+    const isUiBlocked = uiLockCount > 0 || fileQuery.loading;
+
     return (
-        <div className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-text-primary)]">
+        <div className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-text-primary)]" aria-busy={isUiBlocked}>
             <HeaderBar
                 activeTab={activeTab === "preview" ? "preview" : "editor"}
                 onTabChange={(t) => setActiveTab(t)}
                 onToggleLeft={() => setLeftPanelOpen((v) => !v)}
             />
-            <main id="main-content" className="mx-auto max-w-7xl px-4 md:px-6 py-6" role="main">
+            <main
+                id="main-content"
+                className="mx-auto max-w-7xl px-4 md:px-6 py-6"
+                role="main"
+                aria-busy={isUiBlocked}
+            >
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-10">
                     <div className="hidden md:block col-span-3">
                         <LeftPanel
@@ -379,7 +403,7 @@ function ResumeEditorPageContent() {
                             onDownloadJson={downloadJson}
                             isAuthenticated={Boolean(isAuthenticated)}
                             onSelectFile={handleSelectDriveFile}
-                            loading={isSaving}
+                            loading={isSaving || isUiBlocked}
                         />
                     </div>
                     {activeTab === "editor" ? <div className="col-span-7 space-y-4">
@@ -437,7 +461,7 @@ function ResumeEditorPageContent() {
                             onDownloadJson={downloadJson}
                             isAuthenticated={Boolean(isAuthenticated)}
                             onSelectFile={handleSelectDriveFile}
-                            loading={isSaving}
+                            loading={isSaving || isUiBlocked}
                         />
                     </div>
                 </div>
@@ -449,6 +473,21 @@ function ResumeEditorPageContent() {
                         {...toast}
                         onDismiss={() => setToast(null)}
                     />
+                </div>
+            )}
+
+            {isUiBlocked && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 backdrop-blur-sm">
+                    <div
+                        className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-4 py-3 shadow-lg"
+                        role="status"
+                        aria-live="polite"
+                    >
+                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent" />
+                        <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                            {t("page.loadingFallback")}
+                        </span>
+                    </div>
                 </div>
             )}
         </div>

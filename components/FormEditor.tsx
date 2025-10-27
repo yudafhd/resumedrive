@@ -149,7 +149,18 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
     update({ customSections: nextSections });
   };
 
-  const skillString = value.skills.join(", ");
+  const normalizeSkillsValue = (raw: unknown): string => {
+    if (typeof raw === "string") return raw;
+    if (Array.isArray(raw)) {
+      return raw
+        .filter((item): item is string => typeof item === "string")
+        .join(", ");
+    }
+    if (raw === null || raw === undefined) return "";
+    return String(raw);
+  };
+  const skillsValue = normalizeSkillsValue(value.skills as unknown);
+
   const customSections = value.customSections ?? [];
 
   return (
@@ -520,17 +531,15 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
           {t("formEditor.skillsDescription")}
         </p>
 
-        <textarea
-          value={skillString}
-          onChange={(event) =>
+        <RichEditor
+          value={skillsValue}
+          onChange={(text) =>
             update({
-              skills: event.target.value
-                .split(",")
-                .map((item) => item.trim())
-                .filter(Boolean),
+              skills: text,
             })
           }
-          className="textarea"
+          rows={3}
+          placeholder={t("richEditor.placeholder")}
         />
       </section>
 

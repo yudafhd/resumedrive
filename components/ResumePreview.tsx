@@ -9,10 +9,27 @@ type ResumePreviewProps = {
   resume: ResumeData;
 };
 
+const normalizeRichText = (value: unknown): string => {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    return value
+      .filter((item): item is string => typeof item === "string")
+      .join(", ");
+  }
+  if (value === null || value === undefined) return "";
+  return String(value);
+};
+
+const hasRichTextContent = (value: string) => {
+  return value.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim().length > 0;
+};
+
 export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
   ({ resume }, ref) => {
     const { t, language } = useTranslation();
     const customSections = resume.customSections ?? [];
+    const skillsHtml = normalizeRichText(resume.skills as unknown);
+    const showSkills = hasRichTextContent(skillsHtml);
     return (
       <div ref={ref} className="space-y-6">
         <header className="border-b border-[var(--color-border)] pb-4">
@@ -120,21 +137,15 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
           </section>
         )}
 
-        {resume.skills.length > 0 && (
+        {showSkills && (
           <section className="space-y-2">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
               {t("resumePreview.skills")}
             </h3>
-            <div className="flex flex-wrap gap-2">
-              {resume.skills.map((skill) => (
-                <span
-                  key={skill}
-                  className="badge border border-[var(--color-primary-light)] text-[var(--color-primary)]"
-                >
-                  {skill}
-                </span>
-              ))}
-            </div>
+            <div
+              className="text-sm leading-relaxed text-[var(--color-text-secondary)]"
+              dangerouslySetInnerHTML={{ __html: skillsHtml }}
+            />
           </section>
         )}
 

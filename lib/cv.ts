@@ -1,4 +1,4 @@
-import { createSafeParser, err, ok, type ParseResult, isStringArray } from "@/lib/validate";
+import { createSafeParser, err, ok, type ParseResult } from "@/lib/validate";
 
 /**
  * Types replacing former Zod schemas. Matches the previous data shape exactly.
@@ -43,7 +43,7 @@ export type CvData = {
   summary: string;
   experience: Experience[];
   education: Education[];
-  skills: string[];
+  skills: string;
   customSections: CustomSection[];
 };
 
@@ -62,7 +62,7 @@ export const defaultCv: CvData = {
   summary: "",
   experience: [],
   education: [],
-  skills: [],
+  skills: "",
   customSections: [],
 };
 
@@ -159,7 +159,7 @@ function isCvData(u: unknown): u is CvData {
 
   if (v.experience !== undefined && !isExperienceArray(v.experience)) return false;
   if (v.education !== undefined && !isEducationArray(v.education)) return false;
-  if (v.skills !== undefined && !isStringArray(v.skills)) return false;
+  if (v.skills !== undefined && !isString(v.skills)) return false;
   if (v.customSections !== undefined) {
     if (!Array.isArray(v.customSections) || !v.customSections.every(isCustomSection)) {
       return false;
@@ -219,7 +219,11 @@ function normalizeCv(input: CvData): CvData {
     summary: isString(input.summary) ? input.summary : "",
     experience: exp,
     education: edu,
-    skills: Array.isArray(input.skills) ? input.skills.filter((s): s is string => typeof s === "string") : [],
+    skills: Array.isArray(input.skills)
+      ? input.skills.filter(isString).join(", ")
+      : isString(input.skills)
+        ? input.skills
+        : "",
     customSections,
   };
 }

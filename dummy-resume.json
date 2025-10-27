@@ -66,24 +66,5 @@
 "endYear": "2020"
 }
 ],
-"skills": [
-"React",
-"React Native",
-"Next.js",
-"Node.js",
-"Supabase",
-"JavaScript",
-"PHP (Filament)",
-"Git",
-"GitLab",
-"Jira",
-"Figma",
-"VS Code",
-"Ant Design",
-"Apollo GraphQL",
-"Jest",
-"Design System",
-"Performance Optimization",
-"Clean Code"
-]
+"skills": "<p>React, React Native, Next.js, Node.js, Supabase, JavaScript, PHP (Filament), Git, GitLab, Jira, Figma, VS Code, Ant Design, Apollo GraphQL, Jest, Design System, Performance Optimization, Clean Code</p>"
 }

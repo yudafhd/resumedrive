@@ -79,9 +79,21 @@ const styles = StyleSheet.create({
   },
 });
 
-function richTextToLines(source?: string | null): string[] {
-  if (!source) return [];
-  return source
+function toRichTextString(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    return value
+      .filter((item): item is string => typeof item === "string")
+      .join(", ");
+  }
+  if (value === null || value === undefined) return "";
+  return String(value);
+}
+
+function richTextToLines(source?: unknown): string[] {
+  const normalized = toRichTextString(source);
+  if (!normalized) return [];
+  return normalized
     .replace(/\r\n/g, "\n")
     .replace(/<\s*br\s*\/?>/gi, "\n")
     .replace(/<\/p>/gi, "\n\n")
@@ -185,14 +197,25 @@ export function ResumePdfDocument({ resume, labels, language }: ResumePdfDocumen
           </View>
         ) : null}
 
-        {resume.skills.length ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{labels.skills}</Text>
-            <Text style={[styles.paragraph, styles.skills]}>
-              {resume.skills.join(", ")}
-            </Text>
-          </View>
-        ) : null}
+        {(() => {
+          const skillLines = richTextToLines(resume.skills);
+          if (!skillLines.length) return null;
+          return (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>{labels.skills}</Text>
+              {skillLines.map((line, index) => {
+                const textStyle = line.startsWith("• ")
+                  ? [styles.paragraph, styles.skills, styles.bullet]
+                  : [styles.paragraph, styles.skills];
+                return (
+                  <Text key={`skills-${index}`} style={textStyle}>
+                    {line}
+                  </Text>
+                );
+              })}
+            </View>
+          );
+        })()}
 
         {customSections.length
           ? customSections.map((section, sectionIndex) => {
