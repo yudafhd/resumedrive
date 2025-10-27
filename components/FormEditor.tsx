@@ -165,7 +165,7 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
 
   return (
     <div className="space-y-8">
-      <section className="space-y-4">
+      <section className="card space-y-4">
         <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
           {t("formEditor.profile")}
         </h2>
@@ -266,7 +266,7 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
         </div>
       </section >
 
-      <section className="space-y-4">
+      <section className="card space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
             {t("formEditor.experience")}
@@ -411,7 +411,7 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
         )}
       </section>
 
-      <section className="space-y-4">
+      <section className="card space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
             {t("formEditor.education")}
@@ -523,7 +523,7 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
         )}
       </section>
 
-      <section className="space-y-4">
+      <section className="card space-y-4">
         <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
           {t("formEditor.skills")}
         </h2>
@@ -543,7 +543,7 @@ export function FormEditor({ value, onChange }: FormEditorProps) {
         />
       </section>
 
-      <section className="space-y-4">
+      <section className="card space-y-4">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">

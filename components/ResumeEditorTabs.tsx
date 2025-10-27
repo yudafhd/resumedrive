@@ -19,7 +19,7 @@ export function EditorTab({
   const { t } = useTranslation();
 
   return (
-    <section className="card space-y-6 !p-4 md:!p-6">
+    <section className="space-y-6 !p-4 md:!p-6">
       <header className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
